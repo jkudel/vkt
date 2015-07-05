@@ -2,6 +2,10 @@
   line-height: 30px;
 }
 
+.hidden {
+  display: none;
+}
+
 header {
   margin-bottom: 10px;
 }
