@@ -3,7 +3,7 @@ namespace sessions;
 
 function login($userId) {
   // todo: destroy session after some time
-  if (!start_session_if_necessary()) {
+  if (!startSessionIfNecessary()) {
     return false;
   }
   $_SESSION['user_id'] = strval($userId);
@@ -11,21 +11,21 @@ function login($userId) {
 }
 
 function logout() {
-  if (start_session_if_necessary()) {
+  if (startSessionIfNecessary()) {
     session_destroy();
   }
 }
 
-function get_current_user_id() {
-  if (!start_session_if_necessary()) {
+function getCurrentUserId() {
+  if (!startSessionIfNecessary()) {
     return null;
   }
-  return isset($_SESSION) ? get_if_exists($_SESSION, 'user_id') : null;
+  return isset($_SESSION) ? getIfExists($_SESSION, 'user_id') : null;
 }
 
-function start_session_if_necessary() {
+function startSessionIfNecessary() {
   if (session_status() == PHP_SESSION_NONE && !session_start()) {
-    log_error('cannot start session');
+    logError('cannot start session');
     return false;
   }
   return true;

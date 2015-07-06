@@ -7,16 +7,16 @@ const ROLE_EXECUTOR = 0;
 const ROLE_CUSTOMER = 1;
 const ROLES_NAMES = ['Исполнитель', 'Заказчик'];
 
-function handle_login_request() {
-  $requestMethod = get_if_exists($_SERVER, 'REQUEST_METHOD');
+function handleLoginRequest() {
+  $requestMethod = getIfExists($_SERVER, 'REQUEST_METHOD');
 
   if ($requestMethod != 'POST') {
-    log_error('incorrect request method '.$requestMethod);
+    logError('incorrect request method '.$requestMethod);
     error('Внутренняя ошибка сервера');
     return;
   }
-  $userName = get_if_exists($_POST, 'user-name');
-  $password = get_if_exists($_POST, 'password');
+  $userName = getIfExists($_POST, 'user-name');
+  $password = getIfExists($_POST, 'password');
 
   if (!is_string($userName) || strlen($userName) == 0) {
     error('Введите имя пользователя', 'user-name');
@@ -30,7 +30,7 @@ function handle_login_request() {
     error('Неверное имя пользователя или пароль');
     return;
   }
-  $userInfo = \database\get_user_info_by_name($userName);
+  $userInfo = \database\getUserInfoByName($userName);
 
   if (is_null($userInfo) ||
     !array_key_exists('password', $userInfo) ||
@@ -39,10 +39,10 @@ function handle_login_request() {
     error('Неверное имя пользователя или пароль');
     return;
   }
-  $userId = get_if_exists($userInfo, 'id');
+  $userId = getIfExists($userInfo, 'id');
 
   if (intval($userId) <= 0) {
-    log_error("user id should be a positive int but it is " . $userId);
+    logError("user id should be a positive int but it is " . $userId);
     error('Внутренняя ошибка сервера');
     return;
   }
@@ -50,11 +50,11 @@ function handle_login_request() {
   success();
 }
 
-function handle_register_request() {
-  $userName = get_if_exists($_POST, 'user-name');
-  $password = get_if_exists($_POST, 'password');
-  $repeatPassword = get_if_exists($_POST, 'repeat-password');
-  $role = get_if_exists($_POST, 'role');
+function handleRegisterRequest() {
+  $userName = getIfExists($_POST, 'user-name');
+  $password = getIfExists($_POST, 'password');
+  $repeatPassword = getIfExists($_POST, 'repeat-password');
+  $role = getIfExists($_POST, 'role');
 
   if (!is_string($userName) || strlen($userName) == 0) {
     error('Введите имя пользователя', 'user-name');
@@ -88,14 +88,14 @@ function handle_register_request() {
     error('Недопустимое значение', 'role');
     return;
   }
-  if (\database\get_user_id($userName) != 0) {
+  if (\database\getUserId($userName) != 0) {
     error('Такое имя уже занято', 'user-name');
     return;
   }
-  $newUserId = \database\add_user($userName, password_hash($password, PASSWORD_BCRYPT), $role);
+  $newUserId = \database\addUser($userName, password_hash($password, PASSWORD_BCRYPT), $role);
 
   if ($newUserId == 0) {
-    log_error('cannot add new user into db');
+    logError('cannot add new user into db');
     error('Внутренняя ошибка сервера');
     return;
   }
@@ -120,10 +120,10 @@ $path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 
 switch ($path) {
   case '':
-    $userId = \sessions\get_current_user_id();
+    $userId = \sessions\getCurrentUserId();
 
     if (!is_null($userId)) {
-      $userInfo = \database\get_user_info_by_id($userId);
+      $userInfo = \database\getUserInfoById($userId);
 
       if (is_null($userInfo)) {
         \sessions\logout();
@@ -145,10 +145,10 @@ switch ($path) {
     include 'main_template.php';
     break;
   case 'do_login':
-    handle_login_request();
+    handleLoginRequest();
     break;
   case 'do_register':
-    handle_register_request();
+    handleRegisterRequest();
     break;
   case 'do_logout':
     \sessions\logout();
