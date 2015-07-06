@@ -2,15 +2,11 @@
 namespace sessions;
 
 function login($userId) {
-  if (!is_string($userId)) {
-    log_error('userId must be string');
-    return false;
-  }
   // todo: destroy session after some time
   if (!start_session_if_necessary()) {
     return false;
   }
-  $_SESSION['user_id'] = $userId;
+  $_SESSION['user_id'] = strval($userId);
   return true;
 }
 

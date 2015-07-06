@@ -1,0 +1,12 @@
+CREATE TABLE users (
+  id       INT UNSIGNED            NOT NULL AUTO_INCREMENT,
+  name VARCHAR(20)             NOT NULL UNIQUE,
+  password CHAR(60)                NOT NULL,
+  role     TINYINT UNSIGNED        NOT NULL,
+  balance  DECIMAL(10, 2) UNSIGNED NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (id)
+)
+  CHARACTER SET = utf8
+  ENGINE = InnoDB;
+
+ALTER TABLE users AUTO_INCREMENT = 1;

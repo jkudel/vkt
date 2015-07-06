@@ -26,11 +26,15 @@ function handle_login_request() {
     error('Введите пароль', 'password');
     return;
   }
+  if (strlen($userName) > 20 || strlen($password) > 20) {
+    error('Неверное имя пользователя или пароль');
+    return;
+  }
   $userInfo = \database\get_user_info_by_name($userName);
 
   if (is_null($userInfo) ||
-    !array_key_exists('password_hash', $userInfo) ||
-    !password_verify($password, $userInfo['password_hash'])
+    !array_key_exists('password', $userInfo) ||
+    !password_verify($password, $userInfo['password'])
   ) {
     error('Неверное имя пользователя или пароль');
     return;
@@ -56,9 +60,13 @@ function handle_register_request() {
     error('Введите имя пользователя', 'user-name');
     return;
   }
+  if (strlen($userName) > 20) {
+    error('Имя пользователя может содержать максимум 20 символов', 'user-name');
+    return;
+  }
   $userName = strtolower($userName);
 
-  if (!preg_match('/[^a-z0-9_]/', $userName)) {
+  if (!preg_match('/^\w+$/', $userName)) {
     error('Имя пользователя может содержать только буквы латинского алфавита, цифры и символ подчеркивания', 'user-name');
     return;
   }
@@ -66,8 +74,8 @@ function handle_register_request() {
     error('Введите пароль', 'password');
     return;
   }
-  if (strlen($password) < 4) {
-    error('Пароль должен быть минимум 4 символа', 'password');
+  if (strlen($password) < 4 || strlen($password) > 20) {
+    error('Допустимая длина пароля - от 4 до 20 символов', 'password');
     return;
   }
   if ($repeatPassword !== $password) {

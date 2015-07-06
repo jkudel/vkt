@@ -18,27 +18,32 @@ function validateRequiredField(element, errorMessage) {
 }
 
 function validateRegisterForm() {
-  var userName = $('#user-name');
-  var password = $('#password');
-  var repeatPassword = $('#repeat-password');
+  var userName = $('#register-user-name');
+  var password = $('#register-password');
+  var repeatPassword = $('#register-repeat-password');
   var result = true;
+  var userVal = userName.val();
 
-  if (!userName.val()) {
+  if (!userVal) {
     userName.next('span').text('Введите имя пользователя');
     result = false;
-  } else if (!userName.match(/[^A-Za-z0-9_]/)) {
+  } else if (userVal.length > 20) {
+    password.next('span').text('Имя пользователя может содержать максимум 20 символов');
+    result = false;
+  }  else if (!userVal.match(/^\w+$/)) {
     userName.next('span').text('Имя пользователя может содержать только буквы латинского алфавита, цифры и символ подчеркивания');
     result = false;
   } else {
     userName.next('span').text('');
   }
   var validateRepeatPassword = false;
+  var passwordVal = password.val();
 
-  if (!password.val()) {
+  if (!passwordVal) {
     password.next('span').text('Введите пароль');
     result = false;
-  } else if (password.length < 4) {
-    password.next('span').text('Пароль должен быть минимум 4 символа');
+  } else if (passwordVal.length < 4 || passwordVal.length > 20) {
+    password.next('span').text('Допустимая длина пароля - от 4 до 20 символов');
     result = false;
   } else {
     password.next('span').text('');
@@ -52,7 +57,7 @@ function validateRegisterForm() {
       error = 'Повторите пароль';
       result = false;
     }
-    else if (password.val() != repeatPassword.val()) {
+    else if (passwordVal != repeatPassword.val()) {
       error = 'Пароли не совпадают';
       result = false;
     }
@@ -127,6 +132,7 @@ $(document).ready(function () {
   $('#already-registered, #new-user').change(function() {
     onTheFlyValidationEnabled = false;
     $('input+span').text('');
+    $('#error-placeholder').text('');
 
     if ($('#already-registered').is(':checked')) {
       $('#login-form').fadeIn('fast');
