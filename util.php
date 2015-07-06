@@ -1,4 +1,5 @@
 <?php
+include 'messages.php';
 
 function getIfExists(array $array, $key) {
   return array_key_exists($key, $array) ? $array[$key] : null;
@@ -26,4 +27,15 @@ function getRelativePath($ancestorPath, $path) {
 
 function startsWith($s, $substring) {
   return substr($s, 0, strlen($substring)) === $substring;
+}
+
+function msg($key) {
+  $value = getIfExists(MESSAGES, $key);
+
+  if (is_null($value)) {
+    logError('unknown message key ' . $key);
+    return 'unknown';
+  } else {
+    return $value;
+  }
 }

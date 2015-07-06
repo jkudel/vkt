@@ -2,8 +2,8 @@ var onTheFlyValidationEnabled = false;
 
 function validateLoginForm() {
   var result = true;
-  result = validateRequiredField($('#login-user-name'), 'Введите имя пользователя') && result;
-  result = validateRequiredField($('#login-password'), 'Введите пароль') && result;
+  result = validateRequiredField($('#login-user-name'), msg('no.username.error')) && result;
+  result = validateRequiredField($('#login-password'), msg('no.password.error')) && result;
   return result;
 }
 
@@ -25,13 +25,13 @@ function validateRegisterForm() {
   var userVal = userName.val();
 
   if (!userVal) {
-    userName.next('span').text('Введите имя пользователя');
+    userName.next('span').text(msg('no.username.error'));
     result = false;
   } else if (userVal.length > 20) {
-    password.next('span').text('Имя пользователя может содержать максимум 20 символов');
+    password.next('span').text(msg('user.name.length.error'));
     result = false;
   }  else if (!userVal.match(/^\w+$/)) {
-    userName.next('span').text('Имя пользователя может содержать только буквы латинского алфавита, цифры и символ подчеркивания');
+    userName.next('span').text(msg('invalid.char.in.username.error'));
     result = false;
   } else {
     userName.next('span').text('');
@@ -40,10 +40,10 @@ function validateRegisterForm() {
   var passwordVal = password.val();
 
   if (!passwordVal) {
-    password.next('span').text('Введите пароль');
+    password.next('span').text(msg('no.password.error'));
     result = false;
   } else if (passwordVal.length < 4 || passwordVal.length > 20) {
-    password.next('span').text('Допустимая длина пароля - от 4 до 20 символов');
+    password.next('span').text(msg('password.length.error'));
     result = false;
   } else {
     password.next('span').text('');
@@ -54,11 +54,11 @@ function validateRegisterForm() {
     var error = '';
 
     if (!repeatPassword.val()) {
-      error = 'Повторите пароль';
+      error = msg('no.repeat.password');
       result = false;
     }
     else if (passwordVal != repeatPassword.val()) {
-      error = 'Пароли не совпадают';
+      error = msg('passwords.matching.error');
       result = false;
     }
     repeatPassword.next('span').text(error);

@@ -5,29 +5,29 @@ include 'sessions.php';
 
 const ROLE_EXECUTOR = 0;
 const ROLE_CUSTOMER = 1;
-const ROLES_NAMES = ['Исполнитель', 'Заказчик'];
+$allRoleNames = [msg('executor'), msg('customer')];
 
 function handleLoginRequest() {
   $requestMethod = getIfExists($_SERVER, 'REQUEST_METHOD');
 
   if ($requestMethod != 'POST') {
     logError('incorrect request method '.$requestMethod);
-    error('Внутренняя ошибка сервера');
+    error(msg('internal.error'));
     return;
   }
   $userName = getIfExists($_POST, 'user-name');
   $password = getIfExists($_POST, 'password');
 
   if (!is_string($userName) || strlen($userName) == 0) {
-    error('Введите имя пользователя', 'user-name');
+    error(msg('no.username.error'), 'user-name');
     return;
   }
   if (!is_string($password) || strlen($password) == 0) {
-    error('Введите пароль', 'password');
+    error(msg('no.password.error'), 'password');
     return;
   }
   if (strlen($userName) > 20 || strlen($password) > 20) {
-    error('Неверное имя пользователя или пароль');
+    error(msg('auth.failed.error'));
     return;
   }
   $userInfo = \database\getUserInfoByName($userName);
@@ -36,14 +36,14 @@ function handleLoginRequest() {
     !array_key_exists('password', $userInfo) ||
     !password_verify($password, $userInfo['password'])
   ) {
-    error('Неверное имя пользователя или пароль');
+    error(msg('auth.failed.error'));
     return;
   }
   $userId = getIfExists($userInfo, 'id');
 
   if (intval($userId) <= 0) {
     logError("user id should be a positive int but it is " . $userId);
-    error('Внутренняя ошибка сервера');
+    error(msg('internal.error'));
     return;
   }
   \sessions\login($userId);
@@ -57,46 +57,46 @@ function handleRegisterRequest() {
   $role = getIfExists($_POST, 'role');
 
   if (!is_string($userName) || strlen($userName) == 0) {
-    error('Введите имя пользователя', 'user-name');
+    error(msg('no.user.name'), 'user-name');
     return;
   }
   if (strlen($userName) > 20) {
-    error('Имя пользователя может содержать максимум 20 символов', 'user-name');
+    error(msg('user.name.length.error'), 'user-name');
     return;
   }
   $userName = strtolower($userName);
 
   if (!preg_match('/^\w+$/', $userName)) {
-    error('Имя пользователя может содержать только буквы латинского алфавита, цифры и символ подчеркивания', 'user-name');
+    error(msg('invalid.char.in.username.error'), 'user-name');
     return;
   }
   if (!is_string($password) || strlen($password) == 0) {
-    error('Введите пароль', 'password');
+    error(msg('no.password.error'), 'password');
     return;
   }
   if (strlen($password) < 4 || strlen($password) > 20) {
-    error('Допустимая длина пароля - от 4 до 20 символов', 'password');
+    error(msg('password.length.error'), 'password');
     return;
   }
   if ($repeatPassword !== $password) {
-    error('Пароли не совпадают', 'repeat-password');
+    error(msg('passwords.matching.error'), 'repeat-password');
     return;
   }
   $intRole = intval($role);
 
   if ($intRole != $role || $intRole < 0 || $intRole > 1) {
-    error('Недопустимое значение', 'role');
+    error(msg('invalid.value'));
     return;
   }
   if (\database\getUserId($userName) != 0) {
-    error('Такое имя уже занято', 'user-name');
+    error(msg('username.conflict.error'), 'user-name');
     return;
   }
   $newUserId = \database\addUser($userName, password_hash($password, PASSWORD_BCRYPT), $role);
 
   if ($newUserId == 0) {
     logError('cannot add new user into db');
-    error('Внутренняя ошибка сервера');
+    error(msg('internal.error'));
     return;
   }
   \sessions\login($newUserId);
@@ -132,12 +132,12 @@ switch ($path) {
       $userInfo = null;
     }
     if (is_null($userInfo)) {
-      $title = 'Авторизация';
+      $title = msg('login.title');
       ob_start();
       include 'login.php';
       $content = ob_get_clean();
     } else {
-      $title = 'Главная';
+      $title = msg('home.title');
       ob_start();
       include 'home.php';
       $content = ob_get_clean();

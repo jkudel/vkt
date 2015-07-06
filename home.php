@@ -1,8 +1,7 @@
 <?php
 $userName = $userInfo['name'];
 $role = $userInfo['role'];
-$roleNames = ROLES_NAMES;
-$roleName = $roleNames[$role];
+$roleName = $allRoleNames[$role];
 $balance = '500$';
 $orders = array(
   array('description' => 'order1', 'price' => 1000),
@@ -13,19 +12,19 @@ $orders = array(
 <header>
   <div><?= $userName ?>, <?= $roleName ?></div>
   <?php if ($role == ROLE_EXECUTOR) { ?>
-    <div>Текущий баланс: <?= $balance ?></div><?php
+    <div><?=msg('current.balance')?>: <?= $balance ?></div><?php
   } ?>
-  <div><a id="exit" href="#">Выход</a></div>
+  <div><a id="exit" href="#"><?=msg('exit')?></a></div>
 </header>
 <div>
   <?php if ($role == ROLE_EXECUTOR) { ?>
-    <h1>Доступные заказы</h1>
+    <h1><?=msg('available.orders')?></h1>
 
     <?php foreach ($orders as $order) { ?>
       <div>
         <div><?= $order['description'] ?></div>
         <div><?= $order['price'] ?></div>
-        <div><a href="#">Выполнить</a></div>
+        <div><a href="#"><?=msg('execute.order')?></a></div>
         <br/>
       </div>
     <?php }
@@ -36,7 +35,7 @@ $orders = array(
       <div>
         <div><?= $order['description'] ?></div>
         <div><?= $order['price'] ?></div>
-        <div><a href="#">Отменить</a></div>
+        <div><a href="#"><?=msg('cancel.order')?></a></div>
         <br/>
       </div>
     <?php }
