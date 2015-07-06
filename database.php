@@ -1,20 +1,24 @@
 <?php
 namespace database;
 
+const CANNOT_PREPARE_SQL = 'cannot prepare sql query';
+const CANNOT_BIND_SQL_PARAMS = 'cannot bind params to sql query';
+const CANNOT_EXECUTE_SQL = 'cannot execute sql query';
+
 function addUser($userName, $passwordHash, $role) {
   return connectAndRun(0, function ($link) use ($userName, $passwordHash, $role) {
     $stmt = mysqli_prepare($link, 'INSERT INTO users (name, password, role) VALUES(?, ?, ?)');
 
     if (!$stmt) {
-      logError('cannot prepare sql query');
+      logError(CANNOT_PREPARE_SQL);
       return 0;
     }
     if (!mysqli_stmt_bind_param($stmt, 'ssi', $userName, $passwordHash, $role)) {
-      logError('cannot bind params to sql query');
+      logError(CANNOT_BIND_SQL_PARAMS);
       return 0;
     }
     if (!mysqli_stmt_execute($stmt)) {
-      logError('cannot execute sql query');
+      logError(CANNOT_EXECUTE_SQL);
       return 0;
     }
     return mysqli_insert_id($link);
@@ -26,11 +30,11 @@ function getUserId($name) {
     $stmt = mysqli_prepare($link, 'SELECT id FROM users WHERE name=?');
 
     if (!$stmt) {
-      logError('cannot prepare sql query');
+      logError(CANNOT_PREPARE_SQL);
       return 0;
     }
     if (!mysqli_stmt_bind_param($stmt, 's', $name)) {
-      logError('cannot bind params to sql query');
+      logError(CANNOT_BIND_SQL_PARAMS);
       return 0;
     }
     return executeAndProcessResult($stmt, 0, function ($result) {
@@ -46,11 +50,11 @@ function getUserInfoByName($name) {
     $stmt = mysqli_prepare($link, 'SELECT * FROM users WHERE name=?');
 
     if (!$stmt) {
-      logError('cannot prepare sql query');
+      logError(CANNOT_PREPARE_SQL);
       return null;
     }
     if (!mysqli_stmt_bind_param($stmt, 's', $name)) {
-      logError('cannot bind params to sql query');
+      logError(CANNOT_BIND_SQL_PARAMS);
       return null;
     }
     return executeAndProcessResult($stmt, null, function ($result) {
@@ -64,11 +68,11 @@ function getUserInfoById($id) {
     $stmt = mysqli_prepare($link, 'SELECT * FROM users WHERE id=?');
 
     if (!$stmt) {
-      logError('cannot prepare sql query');
+      logError(CANNOT_PREPARE_SQL);
       return null;
     }
     if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
-      logError('cannot bind params to sql query');
+      logError(CANNOT_BIND_SQL_PARAMS);
       return null;
     }
     return executeAndProcessResult($stmt, null, function ($result) {
@@ -79,7 +83,7 @@ function getUserInfoById($id) {
 
 function executeAndProcessResult($stmt, $errorValue, $func) {
   if (!mysqli_stmt_execute($stmt)) {
-    logError('cannot execute sql query');
+    logError(CANNOT_EXECUTE_SQL);
     return $errorValue;
   }
   /** @noinspection PhpVoidFunctionResultUsedInspection */
