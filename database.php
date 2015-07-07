@@ -82,24 +82,23 @@ function removeOrder($orderId) {
     $stmt = prepareQuery($link, 'DELETE FROM orders WHERE id=?;');
 
     if (is_null($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
     if (!mysqli_stmt_bind_param($stmt, 'i', $orderId)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return false;
     }
     if (!executeStatement($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
     if (!removeOrderFromWaiting($link, $orderId)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
-    mysqli_commit($link);
-    return true;
+    return commitTransaction($link);
   });
 }
 
@@ -111,44 +110,43 @@ function addOrder($customerId, $description, $price) {
     $stmt = prepareQuery($link, 'INSERT INTO orders (description, price, time, customer_id) VALUES (?, ?, ?, ?);');
 
     if (is_null($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
     $time = time();
 
     if (!mysqli_stmt_bind_param($stmt, 'ssii', $userId, $price, $time, $customerId)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return false;
     }
     if (!executeStatement($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
     $orderId = intval(mysqli_insert_id($link));
 
     if ($orderId == 0) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       logError('cannot get last inserted id');
       return false;
     }
     $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (order_id, description, price, time) VALUES (?, ?, ?, ?)');
 
     if (is_null($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
     if (!mysqli_stmt_bind_param($stmt, 'isdi', $orderId, $description, $price, $time)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return false;
     }
     if (!executeStatement($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
-    mysqli_commit($link);
-    return true;
+    return commitTransaction($link);
   });
 }
 
@@ -161,26 +159,24 @@ function markOrderExecuted($orderId, $executorId) {
     $stmt = prepareQuery($link, 'UPDATE orders SET done=TRUE, done_time=?, executor_id=?;');
 
     if (is_null($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
-    $time = time();
-
     if (!mysqli_stmt_bind_param($stmt, 'ii', time(), $executorId)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return false;
     }
     if (!executeStatement($stmt)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
     if (!removeOrderFromWaiting($link, $orderId)) {
-      mysqli_rollback($link);
+      rollbackTransaction($link);
       return false;
     }
-    mysqli_commit($link);
-    return true;
+    return
+      commitTransaction($link);
   });
 }
 
@@ -279,12 +275,29 @@ function prepareQuery($link, $query) {
   return $stmt;
 }
 
-function logMysqlStmtError($prefix, $stmt) {
-  logError($prefix . ': ' . mysqli_stmt_error($stmt));
+function beginTransaction($link) {
+  if (!mysqli_begin_transaction($link)) {
+    logMysqlError('cannot start transaction', $link);
+    return false;
+  }
+  return true;
 }
 
-function logMysqlError($prefix, $link) {
-  logError($prefix . ': ' . mysqli_error($link));
+function commitTransaction($link) {
+  if (!mysqli_commit($link)) {
+    logMysqlError('cannot commit transaction', $link);
+    mysqli_rollback($link);
+    return false;
+  }
+  return true;
+}
+
+function rollbackTransaction($link) {
+  if (!mysqli_rollback($link)) {
+    logMysqlError('cannot rollback transaction', $link);
+    return false;
+  }
+  return true;
 }
 
 function executeStatement($stmt) {
@@ -295,10 +308,10 @@ function executeStatement($stmt) {
   return true;
 }
 
-function beginTransaction($link) {
-  if (!mysqli_begin_transaction($link)) {
-    logMysqlError('cannot start transaction', $link);
-    return false;
-  }
-  return true;
+function logMysqlStmtError($prefix, $stmt) {
+  logError($prefix . ': ' . mysqli_stmt_error($stmt));
+}
+
+function logMysqlError($prefix, $link) {
+  logError($prefix . ': ' . mysqli_error($link));
 }
