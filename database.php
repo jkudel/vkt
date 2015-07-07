@@ -33,9 +33,7 @@ function getUserId($name) {
       return 0;
     }
     return executeAndProcessResult($stmt, 0, function ($result) {
-      $row = mysqli_fetch_row($result);
-      $fieldValue = is_array($row) ? getIfExists($row, 0) : null;
-      return $fieldValue ? intval($fieldValue) : 0;
+      return intval(fetchOnlyValue($result));
     });
   });
 }
@@ -86,8 +84,8 @@ function removeOrder($orderId) {
       return false;
     }
     if (!mysqli_stmt_bind_param($stmt, 'i', $orderId)) {
-      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      rollbackTransaction($link);
       return false;
     }
     if (!executeStatement($stmt)) {
@@ -116,8 +114,8 @@ function addOrder($customerId, $description, $price) {
     $time = time();
 
     if (!mysqli_stmt_bind_param($stmt, 'ssii', $userId, $price, $time, $customerId)) {
-      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      rollbackTransaction($link);
       return false;
     }
     if (!executeStatement($stmt)) {
@@ -127,8 +125,8 @@ function addOrder($customerId, $description, $price) {
     $orderId = intval(mysqli_insert_id($link));
 
     if ($orderId == 0) {
-      rollbackTransaction($link);
       logError('cannot get last inserted id');
+      rollbackTransaction($link);
       return false;
     }
     $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (order_id, description, price, time) VALUES (?, ?, ?, ?)');
@@ -138,8 +136,8 @@ function addOrder($customerId, $description, $price) {
       return false;
     }
     if (!mysqli_stmt_bind_param($stmt, 'isdi', $orderId, $description, $price, $time)) {
-      rollbackTransaction($link);
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      rollbackTransaction($link);
       return false;
     }
     if (!executeStatement($stmt)) {
@@ -150,24 +148,23 @@ function addOrder($customerId, $description, $price) {
   });
 }
 
-function markOrderExecuted($orderId, $executorId) {
-  // todo: commission
-  return connectAndRun(function ($link) use ($orderId, $executorId) {
+function markOrderExecuted($orderId, $executorId, $commission) {
+  return connectAndRun(function ($link) use ($orderId, $executorId, $commission) {
     if (!beginTransaction($link)) {
       return false;
     }
-    $stmt = prepareQuery($link, 'UPDATE orders SET done=TRUE, done_time=?, executor_id=?;');
+    $stmt = prepareQuery($link, 'UPDATE orders SET done=TRUE, done_time=?, executor_id=? WHERE id=? AND done=FALSE;');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);
       return false;
     }
-    if (!mysqli_stmt_bind_param($stmt, 'ii', time(), $executorId)) {
-      rollbackTransaction($link);
+    if (!mysqli_stmt_bind_param($stmt, 'iii', time(), $executorId, $orderId)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      rollbackTransaction($link);
       return false;
     }
-    if (!executeStatement($stmt)) {
+    if (!executeStatement($stmt) || mysqli_stmt_affected_rows($stmt) == 0) {
       rollbackTransaction($link);
       return false;
     }
@@ -175,8 +172,42 @@ function markOrderExecuted($orderId, $executorId) {
       rollbackTransaction($link);
       return false;
     }
-    return
-      commitTransaction($link);
+    $stmt = prepareQuery($link, 'SELECT price FROM waiting_orders WHERE id=?;');
+
+    if (is_null($stmt)) {
+      rollbackTransaction($link);
+      return false;
+    }
+    if (!mysqli_stmt_bind_param($stmt, 'i', $orderId)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      rollbackTransaction($link);
+      return false;
+    }
+    $price = executeAndProcessResult($stmt, null, function ($result) {
+      return fetchOnlyValue($result);
+    });
+    if (is_null($price)) {
+      rollbackTransaction($link);
+      return false;
+    }
+    $stmt = prepareQuery($link, 'UPDATE users SET balance=balance-? WHERE id=?;');
+
+    if (is_null($stmt)) {
+      rollbackTransaction($link);
+      return false;
+    }
+    $delta = $price * $commission;
+
+    if (!mysqli_stmt_bind_param($stmt, 'di', $delta, $executorId)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      rollbackTransaction($link);
+      return false;
+    }
+    if (!executeStatement($stmt) || mysqli_stmt_affected_rows($stmt) == 0) {
+      rollbackTransaction($link);
+      return false;
+    }
+    return commitTransaction($link);
   });
 }
 
@@ -229,6 +260,11 @@ function removeOrderFromWaiting($link, $orderId) {
     return false;
   }
   return executeStatement($stmt);
+}
+
+function fetchOnlyValue($result) {
+  $row = mysqli_fetch_row($result);
+  return is_array($row) ? getIfExists($row, null) : null;
 }
 
 function executeAndGetResultAssoc($stmt, $defaultValue) {
