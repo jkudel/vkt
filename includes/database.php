@@ -284,7 +284,9 @@ function getWaitingOrders($fromId, $count) {
     if (is_null($stmt)) {
       return null;
     }
-    if (!mysqli_stmt_bind_param($stmt, 'ii', $fromId, $fromId + $count)) {
+    $toId = $fromId + $count;
+
+    if (!mysqli_stmt_bind_param($stmt, 'ii', $fromId, $toId)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
