@@ -15,7 +15,12 @@ function logError($message) {
 
 function logMessage($message, $trace, $level) {
   $traceElement = sizeof($trace) == 1 ? $trace[0] : $trace[1];
-  $file = getRelativePath($_SERVER['DOCUMENT_ROOT'], $traceElement['file']);
+  $absolutePath = $traceElement['file'];
+  $file = getRelativePath($_SERVER['DOCUMENT_ROOT'], $absolutePath);
+
+  if (is_null($file)) {
+    $file = $absolutePath;
+  }
   error_log($level . ' at ' . $file . ':' . $traceElement['line'] . ': ' . $message);
 }
 
@@ -27,6 +32,11 @@ function getRelativePath($ancestorPath, $path) {
 
 function startsWith($s, $substring) {
   return substr($s, 0, strlen($substring)) === $substring;
+}
+
+function endsWidth($s, $substring) {
+  $l = strlen($substring);
+  return substr($s, strlen($s) - $l, $l) === $substring;
 }
 
 function msg($key) {
