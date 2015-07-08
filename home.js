@@ -143,22 +143,6 @@ function createOrder(form) {
 }
 
 $(document).ready(function () {
-  $('#exit').click(function (e) {
-    e.preventDefault();
-    clearErrors();
-
-    $.ajax({
-      url: 'ajax/logout.php',
-      type: "POST",
-      dataType: "text",
-      success: function () {
-        location.reload();
-      },
-      error: function (response) {
-        console.error(response);
-      }
-    });
-  });
   var ifExecutedLink = $('#if-executed');
 
   ifExecutedLink.change(function() {
