@@ -39,8 +39,8 @@ $balance = $userInfo['balance'];
     </form>
     <!--suppress HtmlFormInputWithoutLabel -->
     <select id="if-done">
-      <option value="false" selected><?= msg('list.mode.waiting') ?></option>
-      <option value="true"><?= msg('list.mode.done') ?></option>
+      <option value="0" selected><?= msg('list.mode.waiting') ?></option>
+      <option value="1"><?= msg('list.mode.done') ?></option>
     </select>
     <span class="error-placeholder"></span>
     <div id="my-orders"></div>

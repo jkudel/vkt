@@ -89,7 +89,7 @@ function submitFormAndGoHome(url, form) {
         }
       }
       else {
-        window.location.href = '/';
+        window.location.href = 'index.php';
       }
     },
 
@@ -105,7 +105,7 @@ $(document).ready(function () {
     e.preventDefault();
 
     if (validateLoginForm()) {
-      submitFormAndGoHome('do_login', $('#login-form'));
+      submitFormAndGoHome('ajax/login.php', $('#login-form'));
     }
     onTheFlyValidationEnabled = true;
   });
@@ -118,7 +118,7 @@ $(document).ready(function () {
     e.preventDefault();
 
     if (validateRegisterForm()) {
-      submitFormAndGoHome('do_register', $('#register-form'));
+      submitFormAndGoHome('ajax/register.php', $('#register-form'));
     }
     onTheFlyValidationEnabled = true;
   });

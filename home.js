@@ -5,7 +5,7 @@ function reloadMyOrders(errorPlaceholder) {
   $('#my-orders').html('');
 
   $.ajax({
-    url: 'get_my_orders' + params,
+    url: 'ajax/get_my_orders.php' + params,
     type: "GET",
     dataType: "json",
     success: function (response) {
@@ -62,11 +62,11 @@ function buildOrderBlock(data) {
 function cancelOrder(orderId, orderBlock, errorPlaceholder) {
   // todo: progress
   $.ajax({
-    url: 'do_cancel_order',
+    url: 'ajax/cancel_order.php',
     type: "POST",
     dataType: "json",
     data: {
-      'order_id' : orderId
+      'id' : orderId
     },
     success: function (response) {
       var errorMessage = response['error_message'];
@@ -119,7 +119,7 @@ function validateNewOrderForm() {
 function createOrder(form) {
   // todo: progress
   $.ajax({
-    url: 'do_create_order',
+    url: 'ajax/create_order.php',
     type: "POST",
     dataType: "json",
     data: form.serialize(),
@@ -148,7 +148,7 @@ $(document).ready(function () {
     clearErrors();
 
     $.ajax({
-      url: 'do_logout',
+      url: 'ajax/logout.php',
       type: "POST",
       dataType: "text",
       success: function () {
@@ -166,12 +166,12 @@ $(document).ready(function () {
     reloadMyOrders($(this).next('span'));
   });
 
-  $('.cancel-order-link').on('click', function (e) {
+  $('#my-orders').on('click', '.cancel-order-link', function (e) {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    var orderBlock = link.parent().remove();
-    var orderId = link.data('id');
+    var orderBlock = link.parent().parent();
+    var orderId = link.data('order-id');
     cancelOrder(orderId, orderBlock, link.next('span'));
   });
 

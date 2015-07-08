@@ -4,7 +4,7 @@ namespace database;
 const CANNOT_BIND_SQL_PARAMS = 'cannot bind params to sql query';
 
 function addUser($userName, $passwordHash, $role) {
-  return connectAndRun(function ($link) use ($userName, $passwordHash, $role) {
+  return connectAndRun(0, function ($link) use ($userName, $passwordHash, $role) {
     $stmt = prepareQuery($link, 'INSERT INTO users (name, password, role) VALUES(?, ?, ?)');
 
     if (is_null($stmt)) {
@@ -22,24 +22,24 @@ function addUser($userName, $passwordHash, $role) {
 }
 
 function getUserId($name) {
-  return connectAndRun(function ($link) use ($name) {
+  return connectAndRun(null, function ($link) use ($name) {
     $stmt = prepareQuery($link, 'SELECT id FROM users WHERE name=?');
 
     if (is_null($stmt)) {
-      return 0;
+      return null;
     }
     if (!mysqli_stmt_bind_param($stmt, 's', $name)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return 0;
+      return null;
     }
-    return executeAndProcessResult($stmt, 0, function ($result) {
+    return executeAndProcessResult($stmt, null, function ($result) {
       return intval(fetchOnlyValue($result));
     });
   });
 }
 
 function getUserInfoByName($name) {
-  return connectAndRun(function ($link) use ($name) {
+  return connectAndRun(null, function ($link) use ($name) {
     $stmt = prepareQuery($link, 'SELECT * FROM users WHERE name=?');
 
     if (is_null($stmt)) {
@@ -56,7 +56,7 @@ function getUserInfoByName($name) {
 }
 
 function getUserNameById($id) {
-  return connectAndRun(function ($link) use ($id) {
+  return connectAndRun(null, function ($link) use ($id) {
     $stmt = prepareQuery($link, 'SELECT name FROM users WHERE id=?');
 
     if (is_null($stmt)) {
@@ -73,7 +73,7 @@ function getUserNameById($id) {
 }
 
 function getUserRoleById($id) {
-  return connectAndRun(function ($link) use ($id) {
+  return connectAndRun(null, function ($link) use ($id) {
     $stmt = prepareQuery($link, 'SELECT role FROM users WHERE id=?');
 
     if (is_null($stmt)) {
@@ -91,7 +91,7 @@ function getUserRoleById($id) {
 }
 
 function getUserInfoById($id) {
-  return connectAndRun(function ($link) use ($id) {
+  return connectAndRun(null, function ($link) use ($id) {
     $stmt = prepareQuery($link, 'SELECT * FROM users WHERE id=?');
 
     if (is_null($stmt)) {
@@ -108,7 +108,7 @@ function getUserInfoById($id) {
 }
 
 function cancelOrder($orderId, $customerId) {
-  return connectAndRun(function ($link) use ($orderId, $customerId) {
+  return connectAndRun(false, function ($link) use ($orderId, $customerId) {
     if (!beginTransaction($link)) {
       return false;
     }
@@ -141,7 +141,7 @@ function addOrder($customerId, $description, $price) {
   if ($role !== ROLE_CUSTOMER) {
     return null;
   }
-  return connectAndRun(function ($link) use ($customerId, $description, $price) {
+  return connectAndRun(null, function ($link) use ($customerId, $description, $price) {
     if (!beginTransaction($link)) {
       return null;
     }
@@ -192,7 +192,7 @@ function addOrder($customerId, $description, $price) {
 }
 
 function markOrderExecuted($orderId, $executorId, $commission) {
-  return connectAndRun(function ($link) use ($orderId, $executorId, $commission) {
+  return connectAndRun(null, function ($link) use ($orderId, $executorId, $commission) {
     if (!beginTransaction($link)) {
       return false;
     }
@@ -255,7 +255,7 @@ function markOrderExecuted($orderId, $executorId, $commission) {
 }
 
 function getOrdersForUser($userId, $role, $done, $offset, $count) {
-  return connectAndRun(function ($link) use ($userId, $role, $done, $offset, $count) {
+  return connectAndRun(null, function ($link) use ($userId, $role, $done, $offset, $count) {
     if ($role === ROLE_CUSTOMER) {
       $donePart = $done ? 'TRUE' : 'FALSE';
       $query = 'SELECT * FROM orders WHERE customer_id=? AND DONE=' . $donePart . ' ORDER BY id LIMIT ?, ?';
@@ -278,7 +278,7 @@ function getOrdersForUser($userId, $role, $done, $offset, $count) {
 }
 
 function getWaitingOrders($fromId, $count) {
-  return connectAndRun(function ($link) use ($fromId, $count) {
+  return connectAndRun(null, function ($link) use ($fromId, $count) {
     $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE id BETWEEN ? AND ? ORDER BY id');
 
     if (is_null($stmt)) {
@@ -328,7 +328,7 @@ function executeAndProcessResult($stmt, $errorValue, $func) {
   /** @noinspection PhpVoidFunctionResultUsedInspection */
   $result = mysqli_stmt_get_result($stmt);
 
-  if ($result === false) {
+  if (!$result) {
     logMysqlStmtError('cannot get result of sql query: ', $stmt);
     return $errorValue;
   }
@@ -337,8 +337,13 @@ function executeAndProcessResult($stmt, $errorValue, $func) {
   return $value;
 }
 
-function connectAndRun($func) {
+function connectAndRun($errorValue, $func) {
   $link = mysqli_connect('', 'root', '', 'main');
+
+  if (!$link) {
+    logError('cannot connect to database');
+    return $errorValue;
+  }
   $result = $func($link);
   mysqli_close($link);
   return $result;
@@ -347,7 +352,7 @@ function connectAndRun($func) {
 function prepareQuery($link, $query) {
   $stmt = mysqli_prepare($link, $query);
 
-  if ($stmt === false) {
+  if (!$stmt) {
     logError('cannot prepare sql query: ' . mysqli_error($link));
     return null;
   }
