@@ -2,62 +2,47 @@
 $userName = $userInfo['name'];
 $role = $userInfo['role'];
 $roleName = $allRoleNames[$role];
-$balance = '500$';
-$orders = array(
-  array('description' => 'order1', 'price' => 1000),
-  array('description' => 'order2', 'price' => 2000)
-);
+$balance = $userInfo['balance'];
 ?>
+<script type="text/javascript" src="home.js"></script>
 
 <header>
   <div><?= $userName ?>, <?= $roleName ?></div>
   <?php if ($role == ROLE_EXECUTOR) { ?>
-    <div><?=msg('current.balance')?>: <?= $balance ?></div><?php
+    <div><?= msg('current.balance') ?>: <?= $balance ?></div><?php
   } ?>
-  <div><a id="exit" href="#"><?=msg('exit')?></a></div>
+  <div><a id="exit" href="#"><?= msg('exit') ?></a></div>
 </header>
 <div>
   <?php if ($role == ROLE_EXECUTOR) { ?>
-    <h1><?=msg('available.orders')?></h1>
+    <h1><?= msg('available.orders') ?></h1>
+  <?php } else { ?>
+    <h1><?= msg('my.orders') ?></h1>
+    <div><a id="new-order-link" href="#"><?= msg('new.order') ?></a></div>
 
-    <?php foreach ($orders as $order) { ?>
-      <div>
-        <div><?= $order['description'] ?></div>
-        <div><?= $order['price'] ?></div>
-        <div><a href="#"><?=msg('execute.order')?></a></div>
-        <br/>
+    <form id="new-order-form" action="#" method="POST" class="hidden">
+      <div class="field">
+        <label for="new-order-description"><?= msg('description') ?>:</label><br/>
+        <textarea name="description" id="new-order-description"></textarea><br/>
+        <span class="error-placeholder"></span>
       </div>
-    <?php }
-  } else { ?>
-    <h1>Мои заказы</h1>
-
-    <?php foreach ($orders as $order) { ?>
-      <div>
-        <div><?= $order['description'] ?></div>
-        <div><?= $order['price'] ?></div>
-        <div><a href="#"><?=msg('cancel.order')?></a></div>
-        <br/>
+      <div class="field">
+        <label for="new-order-price"><?= msg('price') ?> (<?= msg('currency') ?>):</label><br/>
+        <input id="new-order-price" name="price" autocomplete="off"/><br/>
+        <span class="error-placeholder"></span>
       </div>
-    <?php }
-  } ?>
+      <div id="new-order-error-placeholder" class="error-placeholder"></div>
+      <div class="field">
+        <input type="submit" value="<?= msg('new.order') ?>"/>
+        <input id="new-order-cancel" type="button" value="<?= msg('cancel') ?>"/>
+      </div>
+    </form>
+    <!--suppress HtmlFormInputWithoutLabel -->
+    <select id="if-done">
+      <option value="false" selected><?= msg('list.mode.waiting') ?></option>
+      <option value="true"><?= msg('list.mode.done') ?></option>
+    </select>
+    <span class="error-placeholder"></span>
+    <div id="my-orders"></div>
+  <?php } ?>
 </div>
-
-<script type="text/javascript">
-  $(document).ready(function () {
-    $('#exit').click(function (e) {
-      e.preventDefault();
-
-      $.ajax({
-        url: 'do_logout',
-        type: "POST",
-        dataType: "text",
-        success: function () {
-          location.reload();
-        },
-        error: function (response) {
-          console.error(response);
-        }
-      });
-    });
-  });
-</script>

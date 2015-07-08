@@ -94,6 +94,7 @@ function submitFormAndGoHome(url, form) {
     },
 
     error: function (response) {
+      $('#error-placeholder').text(msg('internal.error'));
       console.error(response);
     }
   });

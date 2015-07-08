@@ -55,6 +55,41 @@ function getUserInfoByName($name) {
   });
 }
 
+function getUserNameById($id) {
+  return connectAndRun(function ($link) use ($id) {
+    $stmt = prepareQuery($link, 'SELECT name FROM users WHERE id=?');
+
+    if (is_null($stmt)) {
+      return null;
+    }
+    if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      return null;
+    }
+    return executeAndProcessResult($stmt, null, function ($result) {
+      return fetchOnlyValue($result);
+    });
+  });
+}
+
+function getUserRoleById($id) {
+  return connectAndRun(function ($link) use ($id) {
+    $stmt = prepareQuery($link, 'SELECT role FROM users WHERE id=?');
+
+    if (is_null($stmt)) {
+      return null;
+    }
+    if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      return null;
+    }
+    return executeAndProcessResult($stmt, null, function ($result) {
+      $value = fetchOnlyValue($result);
+      return $value ? intval($value) : null;
+    });
+  });
+}
+
 function getUserInfoById($id) {
   return connectAndRun(function ($link) use ($id) {
     $stmt = prepareQuery($link, 'SELECT * FROM users WHERE id=?');
@@ -72,18 +107,18 @@ function getUserInfoById($id) {
   });
 }
 
-function removeOrder($orderId) {
-  return connectAndRun(function ($link) use ($orderId) {
+function cancelOrder($orderId, $customerId) {
+  return connectAndRun(function ($link) use ($orderId, $customerId) {
     if (!beginTransaction($link)) {
       return false;
     }
-    $stmt = prepareQuery($link, 'DELETE FROM orders WHERE id=?;');
+    $stmt = prepareQuery($link, 'DELETE FROM orders WHERE id=? AND customer_id=?;');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);
       return false;
     }
-    if (!mysqli_stmt_bind_param($stmt, 'i', $orderId)) {
+    if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       rollbackTransaction($link);
       return false;
@@ -101,50 +136,58 @@ function removeOrder($orderId) {
 }
 
 function addOrder($customerId, $description, $price) {
+  $role = getUserRoleById($customerId);
+
+  if ($role !== ROLE_CUSTOMER) {
+    return null;
+  }
   return connectAndRun(function ($link) use ($customerId, $description, $price) {
     if (!beginTransaction($link)) {
-      return false;
+      return null;
     }
     $stmt = prepareQuery($link, 'INSERT INTO orders (description, price, time, customer_id) VALUES (?, ?, ?, ?);');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);
-      return false;
+      return null;
     }
     $time = time();
 
-    if (!mysqli_stmt_bind_param($stmt, 'ssii', $userId, $price, $time, $customerId)) {
+    if (!mysqli_stmt_bind_param($stmt, 'ssii', $description, $price, $time, $customerId)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       rollbackTransaction($link);
-      return false;
+      return null;
     }
     if (!executeStatement($stmt)) {
       rollbackTransaction($link);
-      return false;
+      return null;
     }
     $orderId = intval(mysqli_insert_id($link));
 
     if ($orderId == 0) {
       logError('cannot get last inserted id');
       rollbackTransaction($link);
-      return false;
+      return null;
     }
     $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (order_id, description, price, time) VALUES (?, ?, ?, ?)');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);
-      return false;
+      return null;
     }
     if (!mysqli_stmt_bind_param($stmt, 'isdi', $orderId, $description, $price, $time)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       rollbackTransaction($link);
-      return false;
+      return null;
     }
     if (!executeStatement($stmt)) {
       rollbackTransaction($link);
-      return false;
+      return null;
     }
-    return commitTransaction($link);
+    if (!commitTransaction($link)) {
+      return null;
+    }
+    return ['id' => $orderId, 'description' => $description, 'price' => $price, 'time' => $time];
   });
 }
 
@@ -264,7 +307,7 @@ function removeOrderFromWaiting($link, $orderId) {
 
 function fetchOnlyValue($result) {
   $row = mysqli_fetch_row($result);
-  return is_array($row) ? getIfExists($row, null) : null;
+  return is_array($row) ? getIfExists($row, 0) : null;
 }
 
 function executeAndGetResultAssoc($stmt, $defaultValue) {
