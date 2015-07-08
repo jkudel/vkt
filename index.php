@@ -20,7 +20,12 @@ if (is_null($userInfo)) {
 } else {
   $title = msg('home.title');
   ob_start();
-  include 'home.php';
+
+  if ($userInfo['role'] == ROLE_EXECUTOR) {
+    include 'home_executor.php';
+  } else {
+    include 'home_customer.php';
+  }
   $content = ob_get_clean();
 }
 include 'main_template.php';
