@@ -169,7 +169,7 @@ function addOrder($customerId, $description, $price) {
       rollbackTransaction($link);
       return null;
     }
-    $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (order_id, description, price, time) VALUES (?, ?, ?, ?)');
+    $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (id, description, price, time) VALUES (?, ?, ?, ?)');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);
@@ -254,22 +254,28 @@ function markOrderExecuted($orderId, $executorId, $commission) {
   });
 }
 
-function getOrdersForUser($userId, $role, $done, $offset, $count) {
-  return connectAndRun(null, function ($link) use ($userId, $role, $done, $offset, $count) {
+function getOrdersForUser($userId, $role, $done, $beforeId, $count) {
+  return connectAndRun(null, function ($link) use ($userId, $role, $done, $beforeId, $count) {
     if ($role === ROLE_CUSTOMER) {
       $donePart = $done ? 'TRUE' : 'FALSE';
-      $query = 'SELECT * FROM orders WHERE customer_id=? AND DONE=' . $donePart . ' ORDER BY id LIMIT ?, ?';
+      $query = 'SELECT * FROM orders WHERE customer_id=? AND DONE=' . $donePart;;
     } else if ($role === ROLE_EXECUTOR) {
-      $query = 'SELECT * FROM orders WHERE executor_id=? ORDER BY id LIMIT ?, ?';
+      $query = 'SELECT * FROM orders WHERE executor_id=?';
     } else {
       return null;
     }
+    $intBeforeId = intval($beforeId);
+
+    if ($intBeforeId > 0) {
+      $query .= ' AND id < ' . $intBeforeId;
+    }
+    $query .= ' ORDER BY id DESC LIMIT ?';
     $stmt = prepareQuery($link, $query);
 
     if (is_null($stmt)) {
       return null;
     }
-    if (!mysqli_stmt_bind_param($stmt, 'iii', $userId, $offset, $count)) {
+    if (!mysqli_stmt_bind_param($stmt, 'ii', $userId, $count)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
@@ -277,16 +283,19 @@ function getOrdersForUser($userId, $role, $done, $offset, $count) {
   });
 }
 
-function getWaitingOrders($fromId, $count) {
-  return connectAndRun(null, function ($link) use ($fromId, $count) {
-    $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE id BETWEEN ? AND ? ORDER BY id');
+function getWaitingOrders($beforeId, $count) {
+  return connectAndRun(null, function ($link) use ($beforeId, $count) {
+    $intBeforeId = intval($beforeId);
 
+    if ($intBeforeId > 0) {
+      $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE id < ' . $intBeforeId . ' ORDER BY id DESC LIMIT ?');
+    } else {
+      $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders ORDER BY id DESC LIMIT ?');
+    }
     if (is_null($stmt)) {
       return null;
     }
-    $toId = $fromId + $count;
-
-    if (!mysqli_stmt_bind_param($stmt, 'ii', $fromId, $toId)) {
+    if (!mysqli_stmt_bind_param($stmt, 'i', $count)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
@@ -295,7 +304,7 @@ function getWaitingOrders($fromId, $count) {
 }
 
 function removeOrderFromWaiting($link, $orderId) {
-  $stmt = prepareQuery($link, 'DELETE FROM waiting_orders WHERE order_id=?;');
+  $stmt = prepareQuery($link, 'DELETE FROM waiting_orders WHERE id=?;');
 
   if (is_null($stmt)) {
     return false;

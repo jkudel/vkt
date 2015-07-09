@@ -8,15 +8,15 @@ if (is_null($userId)) {
   return;
 }
 $done = intval(getIfExists($_GET, 'done'));
-$offset = intval(getIfExists($_GET, 'offset'));
+$beforeId = intval(getIfExists($_GET, 'before_id'));
 $role = $userId ? \database\getUserRoleById($userId) : 0;
-$orders = \database\getOrdersForUser($userId, $role, $done, $offset, ORDER_LIST_PART_SIZE);
+$orders = \database\getOrdersForUser($userId, $role, $done, $beforeId, ORDER_LIST_PART_SIZE + 1);
 
 if (is_null($orders)) {
   internalErrorResponse();
   return;
 }
-$result = [];
+$list = [];
 
 foreach ($orders as $order) {
   $element = [
@@ -34,6 +34,11 @@ foreach ($orders as $order) {
       $element['executor_name'] = $executorName;
     }
   }
-  array_push($result, $element);
+  array_push($list, $element);
+
+  if (sizeof($list) == ORDER_LIST_PART_SIZE) {
+    break;
+  }
 }
-echo json_encode($result);
+$hasMore = sizeof($orders) > ORDER_LIST_PART_SIZE;
+echo json_encode(['list' => $list, 'has_more' => ($hasMore ? 'true' : 'value')]);

@@ -1,9 +1,27 @@
-function reloadMyOrdersForCustomer() {
+var lastLoadedOrderId = 0;
+
+function loadMyOrdersForCustomer(reload) {
+  var ordersBlock = $('#my-orders');
+
+  if (reload) {
+    ordersBlock.html('');
+    lastLoadedOrderId = 0;
+  }
   var ifDone = $('#if-done');
-  var params = ifDone.length > 0 ? '?done=' + ifDone.val() : '';
+  var params = '?before_id=' + lastLoadedOrderId;
+
+  if (ifDone.length > 0) {
+    params += '&done=' + ifDone.val();
+  }
   var errorPlaceholder = ifDone.next('.error-placeholder');
-  doReloadOrders('ajax/get_my_orders.php' + params, $('#my-orders'), errorPlaceholder, function (data) {
+  var url = 'ajax/get_my_orders.php' + params;
+
+  doLoadOrders(url, ordersBlock, errorPlaceholder, function (data) {
     return buildOwnOrderBlock(data, true);
+  }, function(lastOrderId) {
+    if (lastOrderId) {
+      lastLoadedOrderId = lastOrderId;
+    }
   });
 }
 
@@ -95,6 +113,7 @@ function createOrder(form) {
       }
       else {
         $('#new-order-form').hide();
+        clearNewOrderFields();
         $('#my-orders').prepend(buildOwnOrderBlock(response['order']));
       }
     },
@@ -106,12 +125,17 @@ function createOrder(form) {
   });
 }
 
+function clearNewOrderFields() {
+  $('#new-order-description').val('');
+  $('#new-order-price').val('');
+}
+
 $(document).ready(function () {
   var ifExecutedLink = $('#if-done');
 
   ifExecutedLink.change(function() {
     clearErrors();
-    reloadMyOrdersForCustomer();
+    loadMyOrdersForCustomer(true);
   });
 
   $('#my-orders').on('click', '.cancel-order-link', function (e) {
@@ -129,6 +153,7 @@ $(document).ready(function () {
   });
   $('#new-order-cancel').click(function () {
     $('#new-order-form').fadeOut();
+    clearNewOrderFields();
     clearErrors();
   });
   $('#new-order-form').submit(function (e) {
@@ -139,6 +164,10 @@ $(document).ready(function () {
       createOrder($(this));
     }
   });
-  reloadMyOrdersForCustomer();
-  setInterval(reloadMyOrdersForCustomer, 5000);
+  $('.show-more').click(function (e) {
+    e.preventDefault();
+    loadMyOrdersForCustomer(false);
+  });
+  loadMyOrdersForCustomer(false);
+  //setInterval(loadMyOrdersForCustomer, 5000);
 });

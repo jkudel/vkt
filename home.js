@@ -1,7 +1,4 @@
-function doReloadOrders(url, block, errorPlaceholder, buildBlockFunc) {
-  // todo: progress
-  block.html('');
-
+function doLoadOrders(url, block, errorPlaceholder, buildBlockFunc, runIfSuccess) {
   $.ajax({
     url: url,
     type: "GET",
@@ -13,7 +10,19 @@ function doReloadOrders(url, block, errorPlaceholder, buildBlockFunc) {
         errorPlaceholder.text(errorMessage);
       }
       else {
-        block.html(buildDivListBlock(response, buildBlockFunc));
+        var list = response['list'];
+        block.append(buildOrdersListBlock(list, buildBlockFunc));
+        var showMoreButton = block.next().children('.show-more');
+
+        if (response['has_more'] == 'true') {
+          showMoreButton.show();
+        } else {
+          showMoreButton.hide();
+        }
+        if (runIfSuccess) {
+          var lastOrder = list[list.length - 1];
+          runIfSuccess(lastOrder ? lastOrder['id'] : null);
+        }
       }
     },
     error: function (response) {
@@ -23,7 +32,7 @@ function doReloadOrders(url, block, errorPlaceholder, buildBlockFunc) {
   });
 }
 
-function buildDivListBlock(list, func) {
+function buildOrdersListBlock(list, func) {
   var builder = ['<div>'];
 
   for (var i = 0; i < list.length; i++) {
