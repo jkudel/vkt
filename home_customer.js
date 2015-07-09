@@ -130,13 +130,28 @@ function clearNewOrderFields() {
   $('#new-order-price').val('');
 }
 
-$(document).ready(function () {
-  var ifExecutedLink = $('#if-done');
+function updateIfDoneComboValue(selector) {
+  var defaultIfExecutedVal = getUrlParameters()['if-done'];
 
-  ifExecutedLink.change(function() {
+  if (!defaultIfExecutedVal) {
+    defaultIfExecutedVal = 0;
+  }
+  selector.val(defaultIfExecutedVal);
+}
+$(document).ready(function () {
+  var ifDoneCombo = $('#if-done');
+
+  ifDoneCombo.change(function() {
+    history.pushState({}, '', '?if-done=' + ifDoneCombo.val());
     clearErrors();
     loadMyOrdersForCustomer(true);
   });
+  $(window).bind('popstate', function () {
+    updateIfDoneComboValue(ifDoneCombo);
+    clearErrors();
+    loadMyOrdersForCustomer(true);
+  });
+  updateIfDoneComboValue(ifDoneCombo);
 
   $('#my-orders').on('click', '.cancel-order-link', function (e) {
     e.preventDefault();

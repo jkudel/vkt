@@ -24,7 +24,7 @@
   </form>
   <!--suppress HtmlFormInputWithoutLabel -->
   <select id="if-done">
-    <option value="0" selected><?= msg('list.mode.waiting') ?></option>
+    <option value="0"><?= msg('list.mode.waiting') ?></option>
     <option value="1"><?= msg('list.mode.done') ?></option>
   </select>
 
