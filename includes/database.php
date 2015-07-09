@@ -255,13 +255,13 @@ function markOrderExecuted($orderId, $executorId, $commission) {
   });
 }
 
-function getOrdersForUser($userId, $role, $done, $beforeId, $count) {
-  return connectAndRun(null, function ($link) use ($userId, $role, $done, $beforeId, $count) {
+function getOrdersForUser($userId, $role, $done, $afterId, $beforeId, $count) {
+  return connectAndRun(null, function ($link) use ($userId, $role, $done, $afterId, $beforeId, $count) {
     if ($role === ROLE_CUSTOMER) {
       $donePart = $done ? 'TRUE' : 'FALSE';
-      $query = 'SELECT * FROM orders WHERE customer_id=? AND DONE=' . $donePart;
+      $query = 'SELECT * FROM orders WHERE customer_id=? AND id > ? AND DONE=' . $donePart;
     } else if ($role === ROLE_EXECUTOR) {
-      $query = 'SELECT * FROM orders WHERE executor_id=?';
+      $query = 'SELECT * FROM orders WHERE executor_id=? AND id > ?';
     } else {
       return null;
     }
@@ -276,7 +276,7 @@ function getOrdersForUser($userId, $role, $done, $beforeId, $count) {
     if (is_null($stmt)) {
       return null;
     }
-    if (!mysqli_stmt_bind_param($stmt, 'ii', $userId, $count)) {
+    if (!mysqli_stmt_bind_param($stmt, 'iii', $userId, $afterId, $count)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
@@ -284,19 +284,21 @@ function getOrdersForUser($userId, $role, $done, $beforeId, $count) {
   });
 }
 
-function getWaitingOrders($beforeId, $count) {
-  return connectAndRun(null, function ($link) use ($beforeId, $count) {
+function getWaitingOrders($afterId, $beforeId, $count) {
+  return connectAndRun(null, function ($link) use ($afterId, $beforeId, $count) {
     $intBeforeId = intval($beforeId);
+    $query = 'SELECT * FROM waiting_orders WHERE id > ?';
 
     if ($intBeforeId > 0) {
-      $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE id < ' . $intBeforeId . ' ORDER BY id DESC LIMIT ?');
-    } else {
-      $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders ORDER BY id DESC LIMIT ?');
+      $query .= ' AND id < ' . $intBeforeId;
     }
+    $query .= ' ORDER BY id DESC LIMIT ?';
+    $stmt = prepareQuery($link, $query);
+
     if (is_null($stmt)) {
       return null;
     }
-    if (!mysqli_stmt_bind_param($stmt, 'i', $count)) {
+    if (!mysqli_stmt_bind_param($stmt, 'ii', $afterId, $count)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }

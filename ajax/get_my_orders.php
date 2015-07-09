@@ -9,8 +9,9 @@ if (is_null($userId)) {
 }
 $done = intval(getIfExists($_GET, 'done'));
 $beforeId = intval(getIfExists($_GET, 'before_id'));
+$afterId = intval(getIfExists($_GET, 'after_id'));
 $role = $userId ? \database\getUserRoleById($userId) : 0;
-$orders = \database\getOrdersForUser($userId, $role, $done, $beforeId, ORDER_LIST_PART_SIZE + 1);
+$orders = \database\getOrdersForUser($userId, $role, $done, $afterId, $beforeId, ORDER_LIST_PART_SIZE + 1);
 
 if (is_null($orders)) {
   internalErrorResponse();

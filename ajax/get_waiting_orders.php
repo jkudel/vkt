@@ -2,7 +2,8 @@
 require_once('../includes/common.php');
 
 $beforeId = intval(getIfExists($_GET, 'before_id'));
-$orders = \database\getWaitingOrders($beforeId, ORDER_LIST_PART_SIZE + 1);
+$afterId = intval(getIfExists($_GET, 'after_id'));
+$orders = \database\getWaitingOrders($afterId, $beforeId, ORDER_LIST_PART_SIZE + 1);
 
 if (is_null($orders)) {
   internalErrorResponse();
