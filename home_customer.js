@@ -107,7 +107,7 @@ function createOrder(form) {
 }
 
 $(document).ready(function () {
-  var ifExecutedLink = $('#if-executed');
+  var ifExecutedLink = $('#if-done');
 
   ifExecutedLink.change(function() {
     clearErrors();

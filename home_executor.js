@@ -1,5 +1,5 @@
 function reloadMyOrdersForExecutor() {
-  var errorPlaceholder = $('#available-orders').prev('.error-placeholder');
+  var errorPlaceholder = $('my-orders').prev('.error-placeholder');
   doReloadOrders('ajax/get_my_orders.php', $('#my-orders'), errorPlaceholder, function (data) {
     return buildOwnOrderBlock(data, false);
   });
@@ -54,6 +54,6 @@ $(document).ready(function () {
     executeOrder(link.data('order-id'), orderBlock, link.next('span'));
   });
   reloadAvailableOrders();
-  reloadMyOrdersForExecutor();
+  //reloadMyOrdersForExecutor();
   setInterval(reloadAvailableOrders, 5000);
 });

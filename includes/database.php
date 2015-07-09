@@ -215,7 +215,7 @@ function markOrderExecuted($orderId, $executorId, $commission) {
       rollbackTransaction($link);
       return false;
     }
-    $stmt = prepareQuery($link, 'SELECT price FROM waiting_orders WHERE id=?;');
+    $stmt = prepareQuery($link, 'SELECT price FROM orders WHERE id=?;');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);
@@ -233,7 +233,7 @@ function markOrderExecuted($orderId, $executorId, $commission) {
       rollbackTransaction($link);
       return false;
     }
-    $stmt = prepareQuery($link, 'UPDATE users SET balance=balance-? WHERE id=?;');
+    $stmt = prepareQuery($link, 'UPDATE users SET balance=balance+? WHERE id=?;');
 
     if (is_null($stmt)) {
       rollbackTransaction($link);

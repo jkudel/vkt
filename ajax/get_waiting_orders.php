@@ -10,6 +10,7 @@ if (is_null($orders)) {
 }
 $result = array_map(function ($order) {
   return [
+    'id' => $order['order_id'],
     'description' => $order['description'],
     'price' => strval($order['price']),
     'time' => $order['time'],
