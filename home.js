@@ -1,3 +1,5 @@
+var lastLoadedOrderId = 0;
+
 function doLoadOrders(url, block, errorPlaceholder, buildBlockFunc, runIfSuccess) {
   $.ajax({
     url: url,
@@ -55,4 +57,13 @@ function buildBaseOrderBlock(data) {
 
 function clearErrors() {
   $('.error-placeholder').text('');
+}
+
+function updateSelectedViewMode(selector, defaultMode) {
+  var defaultIfExecutedVal = getUrlParameters()['view-mode'];
+
+  if (!defaultIfExecutedVal) {
+    defaultIfExecutedVal = defaultMode;
+  }
+  selector.val(defaultIfExecutedVal);
 }

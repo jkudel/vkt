@@ -1,32 +1,38 @@
-var lastLoadedOrderId = 0;
 
-function reloadMyOrdersForExecutor() {
-  var errorPlaceholder = $('my-orders').prev('.error-placeholder');
-  doLoadOrders('ajax/get_my_orders.php', $('#my-orders'), errorPlaceholder, function (data) {
-    return buildOwnOrderBlock(data, false);
-  });
-}
+function loadOrdersForExecutor(reload) {
+  var ordersBlock = $('#orders');
 
-function loadAvailableOrders() {
-  var availableOrders = $('#available-orders');
-  var errorPlaceholder = availableOrders.prev('.error-placeholder');
-  var url = 'ajax/get_waiting_orders.php?before_id=' + lastLoadedOrderId;
+  if (reload) {
+    ordersBlock.html('');
+    lastLoadedOrderId = 0;
+  }
+  var viewMode = $('#view-mode');
+  var url = viewMode.val() == 'done'
+    ? 'ajax/get_my_orders.php'
+    : 'ajax/get_waiting_orders.php';
+  var errorPlaceholder = viewMode.prev('.error-placeholder');
+  var params = '?before_id=' + lastLoadedOrderId;
 
-  doLoadOrders(url, availableOrders,
-    errorPlaceholder, buildAvailableOrderBlock, function (lastOrderId) {
+  doLoadOrders(url + params, ordersBlock,
+    errorPlaceholder, buildOrderBlockForExecutor, function (lastOrderId) {
       if (lastOrderId) {
         lastLoadedOrderId = lastOrderId;
       }
     });
 }
 
-function buildAvailableOrderBlock(data) {
+function buildOrderBlockForExecutor(data) {
+  var html = buildBaseOrderBlock(data);
+
+  if (data['done_time']) {
+    return html;
+  }
   var executeButton =
     '<a class="execute-order-link" href="#" ' +
     'data-order-id="' + data['id'] + '" '+
     'data-order-price="' + data['price'] + '">' +
     msg('execute.order') + '</a>';
-  return buildBaseOrderBlock(data) +
+  return html +
     '<div>' +
     executeButton +
     '<span class="error-placeholder"></span>' +
@@ -63,7 +69,23 @@ function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
 }
 
 $(document).ready(function () {
-  $('#available-orders').on('click', '.execute-order-link', function (e) {
+  var viewMode = $('#view-mode');
+
+  viewMode.change(function () {
+    history.pushState({}, '', '?view-mode=' + viewMode.val());
+    clearErrors();
+    loadOrdersForExecutor(true);
+  });
+  var defaultViewMode = 'available';
+
+  $(window).bind('popstate', function () {
+    updateSelectedViewMode(viewMode, defaultViewMode);
+    clearErrors();
+    loadOrdersForExecutor(true);
+  });
+  updateSelectedViewMode(viewMode, defaultViewMode);
+
+  $('#orders').on('click', '.execute-order-link', function (e) {
     e.preventDefault();
     clearErrors();
     var link = $(this);
@@ -72,9 +94,9 @@ $(document).ready(function () {
   });
   $('.show-more').click(function (e) {
     e.preventDefault();
-    loadAvailableOrders();
+    loadOrdersForExecutor();
   });
-  loadAvailableOrders();
+  loadOrdersForExecutor();
   //reloadMyOrdersForExecutor();
-  //setInterval(loadAvailableOrders, 5000);
+  //setInterval(loadOrdersForExecutor, 5000);
 });

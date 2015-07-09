@@ -1,47 +1,46 @@
-var lastLoadedOrderId = 0;
 
-function loadMyOrdersForCustomer(reload) {
-  var ordersBlock = $('#my-orders');
+function loadOrdersForCustomer(reload) {
+  var ordersBlock = $('#orders');
 
   if (reload) {
     ordersBlock.html('');
     lastLoadedOrderId = 0;
   }
-  var ifDone = $('#if-done');
   var params = '?before_id=' + lastLoadedOrderId;
+  var viewMode = $('#view-mode');
 
-  if (ifDone.length > 0) {
-    params += '&done=' + ifDone.val();
+  if (viewMode.val() == 'done') {
+    params += '&done=1';
   }
-  var errorPlaceholder = ifDone.next('.error-placeholder');
+  var errorPlaceholder = viewMode.next('.error-placeholder');
   var url = 'ajax/get_my_orders.php' + params;
 
   doLoadOrders(url, ordersBlock, errorPlaceholder, function (data) {
-    return buildOwnOrderBlock(data, true);
-  }, function(lastOrderId) {
+    return buildOrderBlockForCustomer(data);
+  }, function (lastOrderId) {
     if (lastOrderId) {
       lastLoadedOrderId = lastOrderId;
     }
   });
 }
 
-function buildOwnOrderBlock(data, showExecutor) {
+function buildOrderBlockForCustomer(data) {
   var html = buildBaseOrderBlock(data);
   var doneTime = data['done_time'];
   var presentableDoneTime = doneTime ? new Date(doneTime) : '';
   var executor = data['executor'];
 
   if (doneTime && executor) {
-    if (showExecutor) {
-      html += '<div>' + msg('executor') + ': ' + executor + '</div>';
-    }
+    html += '<div>' + msg('executor') + ': ' + executor + '</div>';
     html += '<div>' + msg('order.execution.time') + ': ' + presentableDoneTime + '</div>';
+  } else {
+    html +=
+      '<div>' +
+      '  <a class="cancel-order-link" data-order-id="' + data['id'] + '" href="#">' + msg('cancel.order') + '</a>' +
+      '  <span class="error-placeholder"></span>' +
+      '</div>';
   }
-  return html +
-    '<div>' +
-    '  <a class="cancel-order-link" data-order-id="' + data['id'] + '" href="#">' + msg('cancel.order') + '</a>' +
-    '  <span class="error-placeholder"></span>' +
-    '</div>';
+  return html;
 }
 
 function cancelOrder(orderId, orderBlock, errorPlaceholder) {
@@ -51,7 +50,7 @@ function cancelOrder(orderId, orderBlock, errorPlaceholder) {
     type: "POST",
     dataType: "json",
     data: {
-      'id' : orderId
+      'id': orderId
     },
     success: function (response) {
       var errorMessage = response['error_message'];
@@ -114,7 +113,13 @@ function createOrder(form) {
       else {
         $('#new-order-form').hide();
         clearNewOrderFields();
-        $('#my-orders').prepend(buildOwnOrderBlock(response['order']));
+        var viewModeCombo = $('#view-mode');
+
+        if (viewModeCombo.val() == 'waiting') {
+          $('#orders').prepend(buildOrderBlockForCustomer(response['order']));
+        } else {
+          viewModeCombo.val('waiting').change();
+        }
       }
     },
 
@@ -130,30 +135,24 @@ function clearNewOrderFields() {
   $('#new-order-price').val('');
 }
 
-function updateIfDoneComboValue(selector) {
-  var defaultIfExecutedVal = getUrlParameters()['if-done'];
-
-  if (!defaultIfExecutedVal) {
-    defaultIfExecutedVal = 0;
-  }
-  selector.val(defaultIfExecutedVal);
-}
 $(document).ready(function () {
-  var ifDoneCombo = $('#if-done');
+  var viewMode = $('#view-mode');
 
-  ifDoneCombo.change(function() {
-    history.pushState({}, '', '?if-done=' + ifDoneCombo.val());
+  viewMode.change(function () {
+    history.pushState({}, '', '?view-mode=' + viewMode.val());
     clearErrors();
-    loadMyOrdersForCustomer(true);
+    loadOrdersForCustomer(true);
   });
+  var defaultViewMode = 'waiting';
+
   $(window).bind('popstate', function () {
-    updateIfDoneComboValue(ifDoneCombo);
+    updateSelectedViewMode(viewMode, defaultViewMode);
     clearErrors();
-    loadMyOrdersForCustomer(true);
+    loadOrdersForCustomer(true);
   });
-  updateIfDoneComboValue(ifDoneCombo);
+  updateSelectedViewMode(viewMode, defaultViewMode);
 
-  $('#my-orders').on('click', '.cancel-order-link', function (e) {
+  $('#orders').on('click', '.cancel-order-link', function (e) {
     e.preventDefault();
     clearErrors();
     var link = $(this);
@@ -161,7 +160,7 @@ $(document).ready(function () {
     cancelOrder(link.data('order-id'), orderBlock, link.next('span'));
   });
 
-  $('#new-order-link').click(function(e) {
+  $('#new-order-link').click(function (e) {
     e.preventDefault();
     $('#new-order-form').fadeIn();
     clearErrors();
@@ -181,8 +180,8 @@ $(document).ready(function () {
   });
   $('.show-more').click(function (e) {
     e.preventDefault();
-    loadMyOrdersForCustomer(false);
+    loadOrdersForCustomer(false);
   });
-  loadMyOrdersForCustomer(false);
-  //setInterval(loadMyOrdersForCustomer, 5000);
+  loadOrdersForCustomer(false);
+  //setInterval(loadOrdersForCustomer, 5000);
 });

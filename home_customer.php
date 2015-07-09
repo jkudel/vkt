@@ -1,7 +1,7 @@
 <?php include 'home_header.php'; ?>
 <script type="text/javascript" src="home_customer.js"></script>
 <div>
-  <h1><?= msg('my.orders') ?></h1>
+  <h1><?= msg('orders') ?></h1>
 
   <div><a id="new-order-link" href="#"><?= msg('new.order') ?></a></div>
 
@@ -23,12 +23,12 @@
     </div>
   </form>
   <!--suppress HtmlFormInputWithoutLabel -->
-  <select id="if-done">
-    <option value="0"><?= msg('list.mode.waiting') ?></option>
-    <option value="1"><?= msg('list.mode.done') ?></option>
+  <select id="view-mode">
+    <option value="waiting"><?= msg('view.mode.waiting') ?></option>
+    <option value="done"><?= msg('view.mode.done') ?></option>
   </select>
 
   <div class="error-placeholder"></div>
-  <div id="my-orders"></div>
+  <div id="orders"></div>
   <div><a href="#" class="show-more"><?= msg('show.more') ?></a></div>
 </div>

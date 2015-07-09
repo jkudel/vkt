@@ -1,18 +1,15 @@
 <?php include 'home_header.php'; ?>
 <script type="text/javascript" src="home_executor.js"></script>
 <div>
-  <div>
-    <h1><?= msg('available.orders') ?></h1>
+  <h1><?= msg('orders') ?></h1>
 
-    <div class="error-placeholder"></div>
-    <div id="available-orders"></div>
-    <div><a href="#" class="show-more"><?= msg('show.more') ?></a></div>
-  </div>
-  <div>
-    <h1><?= msg('my.orders') ?></h1>
+  <!--suppress HtmlFormInputWithoutLabel -->
+  <select id="view-mode">
+    <option value="available"><?= msg('view.mode.available') ?></option>
+    <option value="done"><?= msg('view.mode.done') ?></option>
+  </select>
 
-    <div class="error-placeholder"></div>
-    <div id="my-orders"></div>
-    <div><a href="#" class="show-more"><?= msg('show.more') ?></a></div>
-  </div>
+  <div class="error-placeholder"></div>
+  <div id="orders"></div>
+  <div><a href="#" class="show-more"><?= msg('show.more') ?></a></div>
 </div>

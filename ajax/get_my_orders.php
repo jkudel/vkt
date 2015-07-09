@@ -24,14 +24,14 @@ foreach ($orders as $order) {
     'description' => $order['description'],
     'price' => strval($order['price']),
     'time' => $order['time'],
+    'done_time' => $order['done_time']
   ];
-
   if ($role === ROLE_CUSTOMER) {
     $executorId = $order['executor_id'];
     $executorName = is_null($executorId) ? null : \database\getUserNameById($executorId);
 
     if (!is_null($executorName)) {
-      $element['executor_name'] = $executorName;
+      $element['executor'] = $executorName;
     }
   }
   array_push($list, $element);

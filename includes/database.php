@@ -33,7 +33,8 @@ function getUserId($name) {
       return null;
     }
     return executeAndProcessResult($stmt, null, function ($result) {
-      return intval(fetchOnlyValue($result));
+      $value = fetchOnlyValue($result);
+      return is_null($value) ? null : intval($value);
     });
   });
 }
@@ -85,7 +86,7 @@ function getUserRoleById($id) {
     }
     return executeAndProcessResult($stmt, null, function ($result) {
       $value = fetchOnlyValue($result);
-      return $value ? intval($value) : null;
+      return is_null($value) ? null : intval($value);
     });
   });
 }
@@ -258,7 +259,7 @@ function getOrdersForUser($userId, $role, $done, $beforeId, $count) {
   return connectAndRun(null, function ($link) use ($userId, $role, $done, $beforeId, $count) {
     if ($role === ROLE_CUSTOMER) {
       $donePart = $done ? 'TRUE' : 'FALSE';
-      $query = 'SELECT * FROM orders WHERE customer_id=? AND DONE=' . $donePart;;
+      $query = 'SELECT * FROM orders WHERE customer_id=? AND DONE=' . $donePart;
     } else if ($role === ROLE_EXECUTOR) {
       $query = 'SELECT * FROM orders WHERE executor_id=?';
     } else {
