@@ -17,6 +17,7 @@
         $i++;
       }?>
     };
+    var commission = <?=COMMISSION?>;
   </script>
   <script type="text/javascript" src="util.js"></script>
 </head>

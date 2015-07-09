@@ -239,7 +239,7 @@ function markOrderExecuted($orderId, $executorId, $commission) {
       rollbackTransaction($link);
       return false;
     }
-    $delta = $price * $commission;
+    $delta = $price * (1 - $commission);
 
     if (!mysqli_stmt_bind_param($stmt, 'di', $delta, $executorId)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);

@@ -21,14 +21,19 @@ function loadAvailableOrders() {
 }
 
 function buildAvailableOrderBlock(data) {
+  var executeButton =
+    '<a class="execute-order-link" href="#" ' +
+    'data-order-id="' + data['id'] + '" '+
+    'data-order-price="' + data['price'] + '">' +
+    msg('execute.order') + '</a>';
   return buildBaseOrderBlock(data) +
     '<div>' +
-    '  <a class="execute-order-link" data-order-id="' + data['id'] + '" href="#">' + msg('execute.order') + '</a>' +
-    '  <span class="error-placeholder"></span>' +
+    executeButton +
+    '<span class="error-placeholder"></span>' +
     '</div>';
 }
 
-function executeOrder(orderId, orderBlock, errorPlaceholder) {
+function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
   $.ajax({
     url: 'ajax/execute_order.php',
     type: "POST",
@@ -43,6 +48,10 @@ function executeOrder(orderId, orderBlock, errorPlaceholder) {
         errorPlaceholder.text(errorMessage);
       }
       else {
+        var balanceElement = $('#balance');
+        var delta = (parseFloat(price) * (1 - getCommission()));
+        var newBalance = parseFloat(balanceElement.text()) + delta;
+        balanceElement.text(newBalance.toFixed(2));
         orderBlock.remove();
       }
     },
@@ -59,7 +68,7 @@ $(document).ready(function () {
     clearErrors();
     var link = $(this);
     var orderBlock = link.parent().parent();
-    executeOrder(link.data('order-id'), orderBlock, link.next('span'));
+    executeOrder(link.data('order-id'), link.data('order-price'), orderBlock, link.next('span'));
   });
   $('.show-more').click(function (e) {
     e.preventDefault();
