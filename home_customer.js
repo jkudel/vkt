@@ -3,24 +3,22 @@ function loadOrdersForCustomer(reload) {
 
   if (reload) {
     ordersBlock.html('');
-    lastLoadedOrderId = 0;
+    lastLoadedOrder = null;
+    loadedOrders = {};
   }
   var viewMode = $('#view-mode');
-  var done = viewMode.val() == 'done' ? 1 : 0;
+  var params = lastLoadedOrder ? buildUntilParamsByOrder(lastLoadedOrder) : {};
+  params['done'] = viewMode.val() == 'done' ? 1 : 0;
 
-  ajaxGetMyOrders(0, lastLoadedOrderId, done, function (response) {
-    var lastOrderId = appendHtmlForOrders(response, ordersBlock, buildOrderBlockForCustomer);
-
-    if (lastOrderId) {
-      lastLoadedOrderId = lastOrderId;
-    }
+  ajaxGetMyOrders(params, function (response) {
+    appendLoadedOrders(response, ordersBlock, buildOrderBlockForCustomer);
   }, function (errorMessage) {
     viewMode.next('.error-placeholder').text(errorMessage);
   });
 }
 
 function buildOrderBlockForCustomer(data) {
-  var html = buildBaseOrderBlock(data);
+  var html = buildBaseOrderBlock(data, false);
   var doneTime = data['done_time'];
   var presentableDoneTime = doneTime ? new Date(doneTime) : '';
   var executor = data['executor'];
@@ -31,7 +29,7 @@ function buildOrderBlockForCustomer(data) {
   } else {
     html +=
       '<div>' +
-      '  <a class="cancel-order-link" data-order-id="' + data['id'] + '" href="#">' + msg('cancel.order') + '</a>' +
+      '  <a class="cancel-order-link" data-order-id="' + data['order_id'] + '" href="#">' + msg('cancel.order') + '</a>' +
       '  <span class="error-placeholder"></span>' +
       '</div>';
   }

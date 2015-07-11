@@ -7,7 +7,7 @@ if (is_null($userId)) {
   notAuthErrorResponse();
   return;
 }
-$orderId = intval(getIfExists($_POST, 'id'));
+$orderId = intval(getIfExists($_POST, 'order_id'));
 
 if ($orderId == 0) {
   validationErrorResponse(msg('incorrect.order.id'));

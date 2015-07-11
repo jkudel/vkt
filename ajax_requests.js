@@ -2,45 +2,66 @@ const AJAX_REGISTER = 'ajax/register.php';
 const AJAX_LOGIN = 'ajax/login.php';
 const AJAX_CREATE_ORDER = 'ajax/create_order.php';
 
-function ajaxGetMyOrders(afterId, beforeId, done, successCallback, errorCallback) {
-  var params = buildParamsStr({
-    'after_id': afterId,
-    'before_id': beforeId,
-    'done': done
-  });
+function handleSuccessResponse(response, successCallback, errorCallback) {
+  var errorMessage = response['error_message'];
+
+  if (errorMessage) {
+    errorCallback(errorMessage);
+  } else {
+    successCallback(response);
+  }
+}
+
+function handleErrorResponse(xhr, error, errorCallback) {
+  errorCallback(msg('internal.error'));
+  var responseTest = xhr['responseText'];
+
+  if (responseTest) {
+    console.error(responseTest);
+  }
+  console.error(error);
+}
+
+/**
+ * Params:
+ *   done,
+ *   since_time, since_customer_id, since_order_id,
+ *   until_time, until_customer_id, until_order_id
+ */
+function ajaxGetMyOrders(params, successCallback, errorCallback) {
+  var paramsStr = buildParamsStr(params);
 
   $.ajax({
-    url: 'ajax/get_my_orders.php' + params,
+    url: 'ajax/get_my_orders.php' + paramsStr,
     type: "GET",
     dataType: "json",
     success: function (response) {
-      var errorMessage = response['error_message'];
-
-      if (errorMessage) {
-        errorCallback(errorMessage);
-      } else {
-        successCallback(response);
-      }
+      handleSuccessResponse(response, successCallback, errorCallback);
     },
-    error: function (response) {
-      errorCallback(msg('internal.error'));
-      console.error(response); // todo: better console logging
+    error: function (xhr, status, error) {
+      handleErrorResponse(xhr, error, errorCallback);
     }
   });
 }
 
-function ajaxGetWaitingOrders(afterId, beforeId, successCallback, errorCallback) {
-  var params = buildParamsStr({
-    'after_id': afterId,
-    'before_id': beforeId
-  });
+/**
+ * Params:
+ *   since_time, since_customer_id, since_order_id,
+ *   until_time, until_customer_id, until_order_id
+ */
+function ajaxGetWaitingOrders(params, successCallback, errorCallback) {
+  var paramsStr = buildParamsStr(params);
 
   $.ajax({
-    url: 'ajax/get_waiting_orders.php' + params,
+    url: 'ajax/get_waiting_orders.php' + paramsStr,
     type: "GET",
     dataType: "json",
-    success: successCallback,
-    error: errorCallback
+    success: function (response) {
+      handleSuccessResponse(response, successCallback, errorCallback);
+    },
+    error: function (xhr, status, error) {
+      handleErrorResponse(xhr, error, errorCallback);
+    }
   });
 }
 
@@ -50,23 +71,32 @@ function ajaxCancelOrder(orderId, successCallback, errorCallback) {
     type: "POST",
     dataType: "json",
     data: {
-      'id': orderId
+      'order_id': orderId
     },
-    success: successCallback,
-    error: errorCallback
+    success: function (response) {
+      handleSuccessResponse(response, successCallback, errorCallback);
+    },
+    error: function (xhr, status, error) {
+      handleErrorResponse(xhr, error, errorCallback);
+    }
   });
 }
 
-function ajaxExecuteOrder(orderId, successCallback, errorCallback) {
+function ajaxExecuteOrder(orderId, customerId, successCallback, errorCallback) {
   $.ajax({
     url: 'ajax/execute_order.php',
     type: "POST",
     dataType: "json",
     data: {
-      'id': orderId
+      'order_id': orderId,
+      'customer_id': customerId
     },
-    success: successCallback,
-    error: errorCallback
+    success: function (response) {
+      handleSuccessResponse(response, successCallback, errorCallback);
+    },
+    error: function (xhr, status, error) {
+      handleErrorResponse(xhr, error, errorCallback);
+    }
   });
 }
 
@@ -76,7 +106,11 @@ function ajaxSubmitForm(url, form, successCallback, errorCallback) {
     type: "POST",
     dataType: "json",
     data: form.serialize(),
-    success: successCallback,
-    error: errorCallback
+    success: function (response) {
+      handleSuccessResponse(response, successCallback, errorCallback);
+    },
+    error: function (xhr, status, error) {
+      handleErrorResponse(xhr, error, errorCallback);
+    }
   });
 }

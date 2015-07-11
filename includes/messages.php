@@ -34,6 +34,7 @@ const MESSAGES = [
   'view.mode.done' => 'Выполненные',
   'view.mode.available' => 'Доступные',
   'price' => 'Стоимость',
+  'profit' => 'Прибыль',
   'order.publish.time' => 'Время публикации',
   'order.execution.time' => 'Время исполнения',
   'not.auth.error' => 'Вы не авторизованы',

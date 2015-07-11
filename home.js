@@ -1,8 +1,39 @@
-var lastLoadedOrderId = 0;
+var loadedOrders = {}; // { orderId_customerId -> time }
+var lastLoadedOrder = null;
 
-function appendHtmlForOrders(response, block, buildBlockFunc) {
+function buildUntilParamsByOrder(order) {
+  return {
+    'until_time': order['time'],
+    'until_customer_id': order['customer_id'],
+    'until_order_id': order['order_id']
+  };
+}
+
+function appendLoadedOrders(response, block, buildBlockFunc) {
   var list = response['list'];
-  block.append(buildOrdersListBlock(list, buildBlockFunc));
+
+  if (!list) {
+    return;
+  }
+  var filteredList = [];
+
+  for (var i = 0; i < list.length; i++) {
+    var order = list[i];
+    var orderId = order['order_id'];
+    var customerId = order['customer_id'];
+    var orderTime = order['time'];
+
+    if (orderId && customerId && orderTime) {
+      var key = orderId + '_' + customerId;
+
+      if (!loadedOrders[key]) {
+        loadedOrders[key] = orderTime;
+        filteredList.push(order);
+        lastLoadedOrder = order;
+      }
+    }
+  }
+  block.append(buildOrdersListBlock(filteredList, buildBlockFunc));
   var showMoreButton = block.next().children('.show-more');
 
   if (response['has_more'] == 'true') {
@@ -10,8 +41,6 @@ function appendHtmlForOrders(response, block, buildBlockFunc) {
   } else {
     showMoreButton.hide();
   }
-  var lastOrder = list[list.length - 1];
-  return lastOrder ? lastOrder['id'] : null;
 }
 
 function buildOrdersListBlock(list, func) {
@@ -24,12 +53,18 @@ function buildOrdersListBlock(list, func) {
   return builder.join('');
 }
 
-function buildBaseOrderBlock(data) {
+function buildBaseOrderBlock(data, showProfit) {
   var time = data['time'];
   var presentableTime = time ? new Date(time) : '';
-  return '<div>' + data['description'] + '</div>' +
-    '<div>' + msg('price') + ': ' + data['price'] + '</div>' +
-    '<div>' + msg('order.publish.time') + ': ' + presentableTime + '</div>';
+  var html = '<div>' + data['description'] + '</div>';
+
+  if (data['price']) {
+    html += '<div>' + msg('price') + ': ' + data['price'] + '</div>';
+  }
+  if (showProfit && data['profit']) {
+    html += '<div>' + msg('profit') + ': ' + data['profit'] + '</div>';
+  }
+  return html + '<div>' + msg('order.publish.time') + ': ' + presentableTime + '</div>';
 
 }
 
