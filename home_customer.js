@@ -95,21 +95,9 @@ function clearNewOrderFields() {
 }
 
 $(document).ready(function () {
-  var viewMode = $('#view-mode');
-
-  viewMode.change(function () {
-    history.pushState({}, '', '?view-mode=' + viewMode.val());
-    clearErrors();
+  initViewModeChooser(function () {
     loadOrdersForCustomer(true);
   });
-  var defaultViewMode = 'waiting';
-
-  $(window).bind('popstate', function () {
-    updateSelectedViewMode(viewMode, defaultViewMode);
-    clearErrors();
-    loadOrdersForCustomer(true);
-  });
-  updateSelectedViewMode(viewMode, defaultViewMode);
 
   $('#orders').on('click', '.cancel-order-link', function (e) {
     e.preventDefault();

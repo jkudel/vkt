@@ -15,7 +15,7 @@ function loadOrdersForExecutor(reload) {
     }
   };
   var errorCallback = function (errorMessage) {
-    viewMode.prev('.error-placeholder').text(errorMessage);
+    viewMode.next('.error-placeholder').text(errorMessage);
   };
   if (viewMode.val() == 'done') {
     ajaxGetMyOrders(0, lastLoadedOrderId, true, successCallback, errorCallback);
@@ -55,22 +55,9 @@ function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
 }
 
 $(document).ready(function () {
-  var viewMode = $('#view-mode');
-
-  viewMode.change(function () {
-    history.pushState({}, '', '?view-mode=' + viewMode.val());
-    clearErrors();
+  initViewModeChooser(function () {
     loadOrdersForExecutor(true);
   });
-  var defaultViewMode = 'available';
-
-  $(window).bind('popstate', function () {
-    updateSelectedViewMode(viewMode, defaultViewMode);
-    clearErrors();
-    loadOrdersForExecutor(true);
-  });
-  updateSelectedViewMode(viewMode, defaultViewMode);
-
   $('#orders').on('click', '.execute-order-link', function (e) {
     e.preventDefault();
     clearErrors();

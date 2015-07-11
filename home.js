@@ -1,27 +1,5 @@
 var lastLoadedOrderId = 0;
 
-function doLoadOrders(url, block, errorPlaceholder, buildBlockFunc, runIfSuccess) {
-  $.ajax({
-    url: url,
-    type: "GET",
-    dataType: "json",
-    success: function (response) {
-      var errorMessage = response['error_message'];
-
-      if (errorMessage) {
-        errorPlaceholder.text(errorMessage);
-      }
-      else {
-
-      }
-    },
-    error: function (response) {
-      errorPlaceholder.text(msg('internal.error'));
-      console.error(response);
-    }
-  });
-}
-
 function appendHtmlForOrders(response, block, buildBlockFunc) {
   var list = response['list'];
   block.append(buildOrdersListBlock(list, buildBlockFunc));
@@ -66,4 +44,22 @@ function updateSelectedViewMode(selector, defaultMode) {
     defaultIfExecutedVal = defaultMode;
   }
   selector.val(defaultIfExecutedVal);
+}
+
+function initViewModeChooser(reloadFunc) {
+  var viewMode = $('#view-mode');
+
+  viewMode.change(function () {
+    history.pushState({}, '', '?view-mode=' + viewMode.val());
+    clearErrors();
+    reloadFunc();
+  });
+  var defaultViewMode = 'available';
+
+  $(window).bind('popstate', function () {
+    updateSelectedViewMode(viewMode, defaultViewMode);
+    clearErrors();
+    reloadFunc();
+  });
+  updateSelectedViewMode(viewMode, defaultViewMode);
 }
