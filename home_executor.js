@@ -67,9 +67,8 @@ $(document).ready(function () {
   });
   $('.show-more').click(function (e) {
     e.preventDefault();
-    loadOrdersForExecutor();
+    loadOrdersForExecutor(false);
   });
-  loadOrdersForExecutor();
-  //reloadMyOrdersForExecutor();
+  loadOrdersForExecutor(false);
   //setInterval(loadOrdersForExecutor, 5000);
 });
