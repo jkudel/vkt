@@ -95,7 +95,7 @@ function clearNewOrderFields() {
 }
 
 $(document).ready(function () {
-  initViewModeChooser(function () {
+  initViewModeChooser('waiting', function () {
     loadOrdersForCustomer(true);
   });
 

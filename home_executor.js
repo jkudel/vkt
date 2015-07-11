@@ -55,7 +55,7 @@ function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
 }
 
 $(document).ready(function () {
-  initViewModeChooser(function () {
+  initViewModeChooser('available', function () {
     loadOrdersForExecutor(true);
   });
   $('#orders').on('click', '.execute-order-link', function (e) {

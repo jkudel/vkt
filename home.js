@@ -46,7 +46,7 @@ function updateSelectedViewMode(selector, defaultMode) {
   selector.val(defaultIfExecutedVal);
 }
 
-function initViewModeChooser(reloadFunc) {
+function initViewModeChooser(defaultViewMode, reloadFunc) {
   var viewMode = $('#view-mode');
 
   viewMode.change(function () {
@@ -54,7 +54,6 @@ function initViewModeChooser(reloadFunc) {
     clearErrors();
     reloadFunc();
   });
-  var defaultViewMode = 'available';
 
   $(window).bind('popstate', function () {
     updateSelectedViewMode(viewMode, defaultViewMode);
