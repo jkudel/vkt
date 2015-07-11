@@ -1,4 +1,3 @@
-
 function loadOrdersForCustomer(reload) {
   var ordersBlock = $('#orders');
 
@@ -6,21 +5,17 @@ function loadOrdersForCustomer(reload) {
     ordersBlock.html('');
     lastLoadedOrderId = 0;
   }
-  var params = '?before_id=' + lastLoadedOrderId;
   var viewMode = $('#view-mode');
+  var done = viewMode.val() == 'done' ? 1 : 0;
 
-  if (viewMode.val() == 'done') {
-    params += '&done=1';
-  }
-  var errorPlaceholder = viewMode.next('.error-placeholder');
-  var url = 'ajax/get_my_orders.php' + params;
+  ajaxGetMyOrders(0, lastLoadedOrderId, done, function (response) {
+    var lastOrderId = appendHtmlForOrders(response, ordersBlock, buildOrderBlockForCustomer);
 
-  doLoadOrders(url, ordersBlock, errorPlaceholder, function (data) {
-    return buildOrderBlockForCustomer(data);
-  }, function (lastOrderId) {
     if (lastOrderId) {
       lastLoadedOrderId = lastOrderId;
     }
+  }, function (errorMessage) {
+    viewMode.next('.error-placeholder').text(errorMessage);
   });
 }
 
@@ -40,32 +35,14 @@ function buildOrderBlockForCustomer(data) {
       '  <span class="error-placeholder"></span>' +
       '</div>';
   }
-  return html;
+  return '<div>' + html + '</div>';
 }
 
 function cancelOrder(orderId, orderBlock, errorPlaceholder) {
-  // todo: progress
-  $.ajax({
-    url: 'ajax/cancel_order.php',
-    type: "POST",
-    dataType: "json",
-    data: {
-      'id': orderId
-    },
-    success: function (response) {
-      var errorMessage = response['error_message'];
-
-      if (errorMessage) {
-        errorPlaceholder.text(errorMessage);
-      }
-      else {
-        orderBlock.remove();
-      }
-    },
-    error: function (response) {
-      errorPlaceholder.text(msg('internal.error'));
-      console.error(response);
-    }
+  ajaxCancelOrder(orderId, function () {
+    orderBlock.remove();
+  }, function (errorMessage) {
+    errorPlaceholder.text(errorMessage);
   });
 }
 
@@ -97,36 +74,18 @@ function validateNewOrderForm() {
 }
 
 function createOrder(form) {
-  // todo: progress
-  $.ajax({
-    url: 'ajax/create_order.php',
-    type: "POST",
-    dataType: "json",
-    data: form.serialize(),
+  ajaxSubmitForm(AJAX_CREATE_ORDER, form, function (response) {
+    $('#new-order-form').hide();
+    clearNewOrderFields();
+    var viewModeCombo = $('#view-mode');
 
-    success: function (response) {
-      var errorMessage = response['error_message'];
-
-      if (errorMessage) {
-        $('#new-order-error-placeholder').text(errorMessage);
-      }
-      else {
-        $('#new-order-form').hide();
-        clearNewOrderFields();
-        var viewModeCombo = $('#view-mode');
-
-        if (viewModeCombo.val() == 'waiting') {
-          $('#orders').prepend(buildOrderBlockForCustomer(response['order']));
-        } else {
-          viewModeCombo.val('waiting').change();
-        }
-      }
-    },
-
-    error: function (response) {
-      $('#new-order-error-placeholder').text(msg('internal.error'));
-      console.error(response);
+    if (viewModeCombo.val() == 'waiting') {
+      $('#orders').prepend(buildOrderBlockForCustomer(response['order']));
+    } else {
+      viewModeCombo.val('waiting').change();
     }
+  }, function (errorMessage) {
+    $('#new-order-error-placeholder').text(errorMessage);
   });
 }
 

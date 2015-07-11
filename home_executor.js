@@ -1,4 +1,3 @@
-
 function loadOrdersForExecutor(reload) {
   var ordersBlock = $('#orders');
 
@@ -7,18 +6,22 @@ function loadOrdersForExecutor(reload) {
     lastLoadedOrderId = 0;
   }
   var viewMode = $('#view-mode');
-  var url = viewMode.val() == 'done'
-    ? 'ajax/get_my_orders.php'
-    : 'ajax/get_waiting_orders.php';
-  var errorPlaceholder = viewMode.prev('.error-placeholder');
-  var params = '?before_id=' + lastLoadedOrderId;
 
-  doLoadOrders(url + params, ordersBlock,
-    errorPlaceholder, buildOrderBlockForExecutor, function (lastOrderId) {
-      if (lastOrderId) {
-        lastLoadedOrderId = lastOrderId;
-      }
-    });
+  var successCallback = function (response) {
+    var lastOrderId = appendHtmlForOrders(response, ordersBlock, buildOrderBlockForExecutor);
+
+    if (lastOrderId) {
+      lastLoadedOrderId = lastOrderId;
+    }
+  };
+  var errorCallback = function (errorMessage) {
+    viewMode.prev('.error-placeholder').text(errorMessage);
+  };
+  if (viewMode.val() == 'done') {
+    ajaxGetMyOrders(0, lastLoadedOrderId, true, successCallback, errorCallback);
+  } else {
+    ajaxGetWaitingOrders(0, lastLoadedOrderId, successCallback, errorCallback);
+  }
 }
 
 function buildOrderBlockForExecutor(data) {
@@ -29,42 +32,25 @@ function buildOrderBlockForExecutor(data) {
   }
   var executeButton =
     '<a class="execute-order-link" href="#" ' +
-    'data-order-id="' + data['id'] + '" '+
+    'data-order-id="' + data['id'] + '" ' +
     'data-order-price="' + data['price'] + '">' +
     msg('execute.order') + '</a>';
-  return html +
+  return '<div>' + html +
     '<div>' +
     executeButton +
     '<span class="error-placeholder"></span>' +
-    '</div>';
+    '</div></div>';
 }
 
 function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
-  $.ajax({
-    url: 'ajax/execute_order.php',
-    type: "POST",
-    dataType: "json",
-    data: {
-      'id': orderId
-    },
-    success: function (response) {
-      var errorMessage = response['error_message'];
-
-      if (errorMessage) {
-        errorPlaceholder.text(errorMessage);
-      }
-      else {
-        var balanceElement = $('#balance');
-        var delta = (parseFloat(price) * (1 - getCommission()));
-        var newBalance = parseFloat(balanceElement.text()) + delta;
-        balanceElement.text(newBalance.toFixed(2));
-        orderBlock.remove();
-      }
-    },
-    error: function (response) {
-      errorPlaceholder.text(msg('internal.error'));
-      console.error(response);
-    }
+  ajaxExecuteOrder(orderId, function () {
+    var balanceElement = $('#balance');
+    var delta = (parseFloat(price) * (1 - getCommission()));
+    var newBalance = parseFloat(balanceElement.text()) + delta;
+    balanceElement.text(newBalance.toFixed(2));
+    orderBlock.remove();
+  }, function (errorMessage) {
+    errorPlaceholder.text(errorMessage);
   });
 }
 

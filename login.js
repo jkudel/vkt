@@ -69,33 +69,16 @@ function validateRegisterForm() {
 }
 
 function submitFormAndGoHome(url, form) {
-  $.ajax({
-    url: url,
-    type: "POST",
-    dataType: "json",
-    data: form.serialize(),
+  ajaxSubmitForm(url, form, function () {
+    window.location.href = 'index.php';
+  }, function (errorMessage) {
+    var fieldName = response['field_name'];
+    var field = fieldName ? form.find('input[name="' + fieldName + '"]+span') : null;
 
-    success: function (response) {
-      var errorMessage = response['error_message'];
-
-      if (errorMessage) {
-        var fieldName = response['field_name'];
-        var field = fieldName ? form.find('input[name="' + fieldName + '"]+span') : null;
-
-        if (field && field.length) {
-          field.text(errorMessage)
-        } else {
-          $('#error-placeholder').text(errorMessage);
-        }
-      }
-      else {
-        window.location.href = 'index.php';
-      }
-    },
-
-    error: function (response) {
-      $('#error-placeholder').text(msg('internal.error'));
-      console.error(response);
+    if (field && field.length) {
+      field.text(errorMessage)
+    } else {
+      $('#error-placeholder').text(errorMessage);
     }
   });
 }
@@ -105,7 +88,7 @@ $(document).ready(function () {
     e.preventDefault();
 
     if (validateLoginForm()) {
-      submitFormAndGoHome('ajax/login.php', $('#login-form'));
+      submitFormAndGoHome(AJAX_LOGIN, $('#login-form'));
     }
     onTheFlyValidationEnabled = true;
   });
@@ -118,7 +101,7 @@ $(document).ready(function () {
     e.preventDefault();
 
     if (validateRegisterForm()) {
-      submitFormAndGoHome('ajax/register.php', $('#register-form'));
+      submitFormAndGoHome(AJAX_REGISTER, $('#register-form'));
     }
     onTheFlyValidationEnabled = true;
   });

@@ -21,3 +21,18 @@ function paramsStrToObject(parametersStr) {
   }
   return result;
 }
+
+function buildParamsStr(paramsMap) {
+  var builder = [];
+  for (var key in paramsMap) {
+    if (paramsMap.hasOwnProperty(key)) {
+      var value = paramsMap[key];
+
+      if (value) {
+        builder.push(encodeURIComponent(key) + "=" + encodeURIComponent(value));
+      }
+    }
+  }
+  var s = builder.join("&");
+  return s.length == 0 ? s : '?' + s;
+}

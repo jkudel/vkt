@@ -20,6 +20,7 @@
     var commission = <?=COMMISSION?>;
   </script>
   <script type="text/javascript" src="util.js"></script>
+  <script type="text/javascript" src="ajax_requests.js"></script>
 </head>
 <body>
 <?= $content ?>
