@@ -47,5 +47,7 @@ const MESSAGES = [
   'min.price.error' => 'Минимальная стоимость - 1 руб.',
   'price.must.be.number' => 'Стоимость дожна быть числом вида X.XX. Пример: 2.99',
   'currency' => 'руб.',
-  'show.more' => 'Показать еще'
+  'show.more' => 'Показать еще',
+  'new.orders.available' => ' новых заказов доступно',
+  'more.new.orders.available' => ' или более новых заказов доступно'
 ];

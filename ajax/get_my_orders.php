@@ -11,6 +11,11 @@ $sinceTime = intval(getIfExists($_GET, 'since_time'));
 $sinceOrderId = intval(getIfExists($_GET, 'since_order_id'));
 $untilTime = intval(getIfExists($_GET, 'until_time'));
 $untilOrderId = intval(getIfExists($_GET, 'until_order_id'));
+$count = intval(getIfExists($_GET, 'count'));
+
+if (!$count) {
+  $count = MAX_ORDER_LIST_PART_SIZE;
+}
 $role = $userId ? \database\getUserRoleById($userId) : 0;
 
 if ($role === ROLE_EXECUTOR) {
@@ -21,12 +26,12 @@ if ($role === ROLE_EXECUTOR) {
     $userId,
     $sinceTime, $sinceCustomerId, $sinceOrderId,
     $untilTime, $untilCustomerId, $untilOrderId,
-    ORDER_LIST_PART_SIZE + 1);
+    $count + 1);
 } else {
   $done = intval(getIfExists($_GET, 'done'));
   $orders = \database\getOrdersForCustomer(
     $userId, $done, $sinceTime, $sinceOrderId, $untilTime, $untilOrderId,
-    ORDER_LIST_PART_SIZE + 1);
+    $count + 1);
 }
 
 if (is_null($orders)) {
@@ -67,9 +72,9 @@ foreach ($orders as $order) {
   }
   array_push($list, $element);
 
-  if (sizeof($list) == ORDER_LIST_PART_SIZE) {
+  if (sizeof($list) == $count) {
     break;
   }
 }
-$hasMore = sizeof($orders) > ORDER_LIST_PART_SIZE;
+$hasMore = sizeof($orders) > $count;
 echo json_encode(['list' => $list, 'has_more' => ($hasMore ? 'true' : 'value')]);

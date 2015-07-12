@@ -1,7 +1,18 @@
-var loadedOrders = {}; // { orderId_customerId -> time }
-var lastLoadedOrder = null;
+const ORDER_LIST_PART_SIZE = 3;
 
-function buildUntilParamsByOrder(order) {
+var feedData = {
+  buildBlockFunc: null,
+  keyFunc: null
+};
+
+var feedOrdersIdSet = {};
+var feedOrders = [];
+
+function buildUntilParamsByLastOrder() {
+  if (feedOrders.length == 0) {
+    return {};
+  }
+  var order = feedOrders[feedOrders.length - 1];
   return {
     'until_time': order['time'],
     'until_customer_id': order['customer_id'],
@@ -9,47 +20,141 @@ function buildUntilParamsByOrder(order) {
   };
 }
 
-function appendLoadedOrders(response, block, buildBlockFunc) {
+function buildSinceParamsByFirstOrder() {
+  if (feedOrders.length == 0) {
+    return {};
+  }
+  var order = feedOrders[0];
+  return {
+    'since_time': order['time'],
+    'since_customer_id': order['customer_id'],
+    'since_order_id': order['order_id']
+  };
+}
+
+function addOrdersToFeedSet(response) {
   var list = response['list'];
 
   if (!list) {
-    return;
+    return null;
   }
   var filteredList = [];
 
   for (var i = 0; i < list.length; i++) {
     var order = list[i];
-    var orderId = order['order_id'];
-    var customerId = order['customer_id'];
-    var orderTime = order['time'];
+    var key = feedData.keyFunc(order);
 
-    if (orderId && customerId && orderTime) {
-      var key = orderId + '_' + customerId;
-
-      if (!loadedOrders[key]) {
-        loadedOrders[key] = orderTime;
-        filteredList.push(order);
-        lastLoadedOrder = order;
-      }
+    if (!feedOrdersIdSet[key]) {
+      feedOrdersIdSet[key] = true;
+      filteredList.push(order);
     }
   }
-  block.append(buildOrdersListBlock(filteredList, buildBlockFunc));
-  var showMoreButton = block.next().children('.show-more');
+  return filteredList;
+}
 
-  if (response['has_more'] == 'true') {
-    showMoreButton.show();
-  } else {
-    showMoreButton.hide();
+function prependLoadedOrdersToFeed(response) {
+  var filteredList = addOrdersToFeedSet(response);
+
+  if (filteredList) {
+    prependOrdersToFeed(filteredList);
   }
 }
 
-function buildOrdersListBlock(list, func) {
-  var builder = ['<div>'];
+function prependOrdersToFeed(list) {
+  feedOrders = list.concat(feedOrders);
+  var ordersBlock = $('#orders');
+  ordersBlock.prepend(buildHtmlForOrdersList(list));
+
+  if (feedOrders.length > ORDER_LIST_PART_SIZE) {
+    var count = Math.min(list.length, feedOrders.length - ORDER_LIST_PART_SIZE);
+
+    if (count > 0) {
+      var start = feedOrders.length - count;
+
+      for (var i = start; i < feedOrders.length; i++) {
+        var key = feedData.keyFunc(feedOrders[i]);
+        delete feedOrdersIdSet[key];
+      }
+      feedOrders = feedOrders.slice(0, start);
+      ordersBlock.children().slice(start).remove();
+    }
+  }
+}
+
+function appendLoadedOrdersToFeed(response) {
+  var filteredList = addOrdersToFeedSet(response);
+
+  if (filteredList) {
+    feedOrders = feedOrders.concat(filteredList);
+    $('#orders').append(buildHtmlForOrdersList(filteredList));
+    var showMoreButton = $('#show-more');
+
+    if (response['has_more'] == 'true') {
+      showMoreButton.show();
+    } else {
+      showMoreButton.hide();
+    }
+  }
+}
+
+function removeOrderBlock(selector, key) {
+  selector.remove();
+  var indexToRemove = -1;
+
+  for (var i = 0; i < feedOrders.length; i++) {
+    var order = feedOrders[i];
+
+    if (feedData.keyFunc(order) == key) {
+      indexToRemove = i;
+      break;
+    }
+  }
+  if (indexToRemove >= 0) {
+    feedOrders.splice(indexToRemove, 1);
+  }
+  delete feedOrdersIdSet[key];
+}
+
+function removeAllFromFeed() {
+  $('#orders').html('');
+  feedOrders = [];
+  feedOrdersIdSet = {};
+}
+
+function removeOrdersFromFeed(orders) {
+  var ordersToRemove = {};
+
+  for (var i = 0; i < orders.length; i++) {
+    var order = orders[i];
+    var orderId = order['order_id'];
+    var customerId = order['customer_id'];
+
+    if (orderId && customerId) {
+      ordersToRemove[customerId + '_' + orderId] = order;
+    }
+  }
+  var result = 0;
+
+  $('#orders').children().each(function () {
+    var executeLink = $(this).find('.execute-order-link');
+    var orderId = executeLink.data('order-id');
+    var customerId = executeLink.data('customer-id');
+    var order = ordersToRemove[customerId + '_' + orderId];
+
+    if (order) {
+      removeOrderBlock($(this), feedData.keyFunc(order));
+      result++;
+    }
+  });
+  return result;
+}
+
+function buildHtmlForOrdersList(list) {
+  var builder = [];
 
   for (var i = 0; i < list.length; i++) {
-    builder.push(func(list[i]));
+    builder.push(feedData.buildBlockFunc(list[i]));
   }
-  builder.push('</div>');
   return builder.join('');
 }
 
@@ -65,7 +170,6 @@ function buildBaseOrderBlock(data, showProfit) {
     html += '<div>' + msg('profit') + ': ' + data['profit'] + '</div>';
   }
   return html + '<div>' + msg('order.publish.time') + ': ' + presentableTime + '</div>';
-
 }
 
 function clearErrors() {

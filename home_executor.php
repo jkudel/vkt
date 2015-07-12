@@ -10,6 +10,7 @@
   </select>
 
   <div class="error-placeholder"></div>
+  <div><a id="show-new-orders" class="hidden" href="#"></a></div>
   <div id="orders"></div>
-  <div><a href="#" class="show-more"><?= msg('show.more') ?></a></div>
+  <div><a href="#" id="show-more" class="hidden"><?= msg('show.more') ?></a></div>
 </div>

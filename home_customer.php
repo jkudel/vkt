@@ -30,5 +30,5 @@
 
   <div class="error-placeholder"></div>
   <div id="orders"></div>
-  <div><a href="#" class="show-more"><?= msg('show.more') ?></a></div>
+  <div><a href="#" id="show-more" class="hidden"><?= msg('show.more') ?></a></div>
 </div>

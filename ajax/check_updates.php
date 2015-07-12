@@ -8,18 +8,27 @@ if (is_null($userId)) {
   notAuthErrorResponse();
   return;
 }
-$role = $userId ? \database\getUserRoleById($userId) : 0;
+$sinceTime = intval(getIfExists($_GET, 'since_time'));
+$sinceCustomerId = intval(getIfExists($_GET, 'since_customer_id'));
+$sinceOrderId = intval(getIfExists($_GET, 'since_order_id'));
 
-if ($role === ROLE_EXECUTOR) {
-  $sinceTime = intval(getIfExists($_GET, 'since_time'));
-  $untilTime = intval(getIfExists($_GET, 'until_time'));
-  $orders = \database\getWaitingOrders($untilTime, 0, MAX_CHECK_COUNT + 1);
+$orders = \database\getWaitingOrders(
+  $sinceTime, $sinceCustomerId, $sinceOrderId, 0, 0, 0, MAX_CHECK_COUNT + 1);
 
-  if ($orders == null) {
-    internalErrorResponse();
-    return;
-  }
-  $newOrdersCount = min(MAX_CHECK_COUNT, sizeof($orders));
-  $newOrdersHasMore = sizeof($orders) > MAX_CHECK_COUNT;
-
+if (is_null($orders)) {
+  internalErrorResponse();
+  return;
 }
+$newOrdersCount = min(MAX_CHECK_COUNT, sizeof($orders));
+$newOrdersHasMore = sizeof($orders) > MAX_CHECK_COUNT;
+$log = \database\getDoneOrExecutedLog($sinceTime);
+
+if (is_null($log)) {
+  internalErrorResponse();
+  return;
+}
+echo json_encode([
+  'new_orders_count' => $newOrdersCount,
+  'new_orders_has_more' => $newOrdersHasMore,
+  'done_or_executed' => $log
+]);

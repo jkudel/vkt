@@ -24,15 +24,13 @@ function handleErrorResponse(xhr, error, errorCallback) {
 
 /**
  * Params:
- *   done,
+ *   done, count,
  *   since_time, since_customer_id, since_order_id,
  *   until_time, until_customer_id, until_order_id
  */
 function ajaxGetMyOrders(params, successCallback, errorCallback) {
-  var paramsStr = buildParamsStr(params);
-
   $.ajax({
-    url: 'ajax/get_my_orders.php' + paramsStr,
+    url: 'ajax/get_my_orders.php' + buildParamsStr(params),
     type: "GET",
     dataType: "json",
     success: function (response) {
@@ -46,14 +44,13 @@ function ajaxGetMyOrders(params, successCallback, errorCallback) {
 
 /**
  * Params:
+ *   count,
  *   since_time, since_customer_id, since_order_id,
  *   until_time, until_customer_id, until_order_id
  */
 function ajaxGetWaitingOrders(params, successCallback, errorCallback) {
-  var paramsStr = buildParamsStr(params);
-
   $.ajax({
-    url: 'ajax/get_waiting_orders.php' + paramsStr,
+    url: 'ajax/get_waiting_orders.php' + buildParamsStr(params),
     type: "GET",
     dataType: "json",
     success: function (response) {
@@ -106,6 +103,20 @@ function ajaxSubmitForm(url, form, successCallback, errorCallback) {
     type: "POST",
     dataType: "json",
     data: form.serialize(),
+    success: function (response) {
+      handleSuccessResponse(response, successCallback, errorCallback);
+    },
+    error: function (xhr, status, error) {
+      handleErrorResponse(xhr, error, errorCallback);
+    }
+  });
+}
+
+function ajaxCheckForUpdates(params, successCallback, errorCallback) {
+  $.ajax({
+    url: 'ajax/check_updates.php' + buildParamsStr(params),
+    type: "GET",
+    dataType: "json",
     success: function (response) {
       handleSuccessResponse(response, successCallback, errorCallback);
     },

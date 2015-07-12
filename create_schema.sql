@@ -52,10 +52,11 @@ CREATE TABLE done_orders_for_executor (
   CHARACTER SET = utf8
   ENGINE = InnoDB;
 
-CREATE TABLE changes_log (
-  order_id INT UNSIGNED     NOT NULL PRIMARY KEY,
-  type     TINYINT UNSIGNED NOT NULL,
-  time     INT UNSIGNED     NOT NULL,
+CREATE TABLE done_or_executed_log (
+  order_id    INT UNSIGNED     NOT NULL,
+  customer_id INT UNSIGNED     NOT NULL,
+  time        BIGINT UNSIGNED     NOT NULL,
+  PRIMARY KEY (order_id, customer_id),
   INDEX (time)
 )
   CHARACTER SET = utf8

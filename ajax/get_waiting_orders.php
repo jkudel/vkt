@@ -7,11 +7,15 @@ $sinceOrderId = intval(getIfExists($_GET, 'since_order_id'));
 $untilTime = intval(getIfExists($_GET, 'until_time'));
 $untilCustomerId = intval(getIfExists($_GET, 'until_customer_id'));
 $untilOrderId = intval(getIfExists($_GET, 'until_order_id'));
+$count = intval(getIfExists($_GET, 'count'));
 
+if (!$count) {
+  $count = MAX_ORDER_LIST_PART_SIZE;
+}
 $orders = \database\getWaitingOrders(
   $sinceTime, $sinceCustomerId, $sinceOrderId,
   $untilTime, $untilCustomerId, $untilOrderId,
-  ORDER_LIST_PART_SIZE + 1);
+  $count + 1);
 
 if (is_null($orders)) {
   internalErrorResponse();
@@ -28,9 +32,9 @@ foreach ($orders as $order) {
     'time' => $order['time'],
   ]);
 
-  if (sizeof($list) == ORDER_LIST_PART_SIZE) {
+  if (sizeof($list) == $count) {
     break;
   }
 }
-$hasMore = sizeof($orders) > ORDER_LIST_PART_SIZE;
+$hasMore = sizeof($orders) > $count;
 echo json_encode(['list' => $list, 'has_more' => ($hasMore ? 'true' : 'false')]);

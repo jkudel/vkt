@@ -10,18 +10,26 @@ function logInfo($message) {
 }
 
 function logError($message) {
-  logMessage($message, debug_backtrace(0, 2), 'ERROR');
+  logMessage($message, debug_backtrace(0, 5), 'ERROR');
 }
 
 function logMessage($message, $trace, $level) {
-  $traceElement = sizeof($trace) == 1 ? $trace[0] : $trace[1];
-  $absolutePath = $traceElement['file'];
-  $file = getRelativePath($_SERVER['DOCUMENT_ROOT'], $absolutePath);
+  $traceStr = '';
+  $i = 0;
 
-  if (is_null($file)) {
-    $file = $absolutePath;
+  foreach ($trace as $traceElement) {
+    if (sizeof($trace) == 1 || $i > 0) {
+      $absolutePath = $traceElement['file'];
+      $file = getRelativePath($_SERVER['DOCUMENT_ROOT'], $absolutePath);
+
+      if (is_null($file)) {
+        $file = $absolutePath;
+      }
+      $traceStr .= "\n    " . $file . ':' . $traceElement['line'] . ' ' . $traceElement['function'];
+    }
+    $i++;
   }
-  error_log($level . ' at ' . $file . ':' . $traceElement['line'] . ': ' . $message);
+  error_log($level . ': ' . $message . $traceStr);
 }
 
 function getRelativePath($ancestorPath, $path) {

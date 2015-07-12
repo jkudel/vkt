@@ -2,8 +2,6 @@
 namespace database;
 
 const CANNOT_BIND_SQL_PARAMS = 'cannot bind params to sql query';
-const CHANGE_TYPE_CANCEL = 0;
-const CHANGE_TYPE_EXECUTE = 0;
 
 function addUser($userName, $passwordHash, $role) {
   return connectAndRun(0, function ($link) use ($userName, $passwordHash, $role) {
@@ -128,11 +126,11 @@ function cancelOrder($orderId, $customerId) {
       rollbackTransaction($link);
       return false;
     }
-    if (!executeStatement($stmt) || mysqli_stmt_affected_rows($stmt) == 0) {
+    if (!executeStatementAndCheckRowsAffected($stmt)) {
       rollbackTransaction($link);
       return false;
     }
-    if (!addChangeToLog($link, $orderId, CHANGE_TYPE_CANCEL)) {
+    if (!addChangeToLog($link, $customerId, $orderId)) {
       rollbackTransaction($link);
       return false;
     }
@@ -140,13 +138,13 @@ function cancelOrder($orderId, $customerId) {
   });
 }
 
-function addChangeToLog($link, $orderId, $type) {
-  $stmt = prepareQuery($link, 'INSERT INTO changes_log (type, time, order_id) VALUE (?, ?, ?)');
+function addChangeToLog($link, $customerId, $orderId) {
+  $stmt = prepareQuery($link, 'INSERT INTO done_or_executed_log (customer_id, order_id, time) VALUE (?, ?, ?)');
 
   if (is_null($stmt)) {
     return false;
   }
-  if (!mysqli_stmt_bind_param($stmt, 'iii', $type, time(), $orderId)) {
+  if (!mysqli_stmt_bind_param($stmt, 'iii', $customerId, $orderId, time())) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
     return false;
   }
@@ -190,7 +188,13 @@ function addOrder($customerId, $description, $price) {
     if (!commitTransaction($link)) {
       return null;
     }
-    return ['id' => $orderId, 'description' => $description, 'price' => $price, 'time' => $time];
+    return [
+      'id' => $orderId,
+      'customer_id' => $customerId,
+      'description' => $description,
+      'price' => $price,
+      'time' => $time
+    ];
   });
 }
 
@@ -235,7 +239,7 @@ function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
       rollbackTransaction($link);
       return false;
     }
-    if (!executeStatement($stmt) || mysqli_stmt_affected_rows($stmt) == 0) {
+    if (!executeStatementAndCheckRowsAffected($stmt)) {
       rollbackTransaction($link);
       return false;
     }
@@ -254,11 +258,11 @@ function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
       rollbackTransaction($link);
       return false;
     }
-    if (!executeStatement($stmt) || mysqli_stmt_affected_rows($stmt) == 0) {
+    if (!executeStatementAndCheckRowsAffected($stmt)) {
       rollbackTransaction($link);
       return false;
     }
-    if (!addChangeToLog($link, $orderId, CHANGE_TYPE_EXECUTE)) {
+    if (!addChangeToLog($link, $customerId, $orderId)) {
       rollbackTransaction($link);
       return false;
     }
@@ -312,6 +316,21 @@ function insertOrderIntoDoneTables($link, $orderInfo, $executorId, $profit) {
   return executeStatement($stmt);
 }
 
+function getDoneOrExecutedLog($sinceTime) {
+  return connectAndRun(null, function ($link) use ($sinceTime) {
+    $stmt = prepareQuery($link, 'SELECT order_id, customer_id FROM done_or_executed_log WHERE time >= ?');
+
+    if (is_null($stmt)) {
+      return null;
+    }
+    if (!mysqli_stmt_bind_param($stmt, 'i', $sinceTime)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      return null;
+    }
+    return executeAndGetResultAssoc($stmt, null);
+  });
+}
+
 function getDoneOrdersForExecutor($userId,
                                   $sinceTime, $sinceCustomerId, $sinceOrderId,
                                   $untilTime, $untilCustomerId, $untilOrderId,
@@ -361,7 +380,7 @@ function buildSinceCondition($params) {
   if ($sinceCustomerId == 0 && $sinceOrderId == 0) {
     return 'time >= ' . $sinceTime;
   } else {
-    $condition = 'time > ' . $sinceTime . ' OR time = ' . $sinceTime . 'AND ';
+    $condition = 'time > ' . $sinceTime . ' OR time = ' . $sinceTime . ' AND ';
 
     if ($sinceCustomerId > 0) {
       $condition .= '(customer_id > ' . $sinceCustomerId . ' OR customer_id = ' . $sinceCustomerId .
@@ -423,6 +442,7 @@ function doGetOrders($tableName, $additionalCondition, $count, $params) {
       $query .= ' WHERE ' . $condition;
     }
     $query .= ' ORDER BY time DESC, customer_id DESC, id DESC LIMIT ?';
+
     $stmt = prepareQuery($link, $query);
 
     if (is_null($stmt)) {
@@ -518,6 +538,18 @@ function rollbackTransaction($link) {
 function executeStatement($stmt) {
   if (!mysqli_stmt_execute($stmt)) {
     logMysqlStmtError('cannot execute sql query', $stmt);
+    return false;
+  }
+  return true;
+}
+
+function executeStatementAndCheckRowsAffected($stmt) {
+  if (!mysqli_stmt_execute($stmt)) {
+    logMysqlStmtError('cannot execute sql query', $stmt);
+    return false;
+  }
+  if (mysqli_stmt_affected_rows($stmt) === 0) {
+    logError('no rows affected');
     return false;
   }
   return true;

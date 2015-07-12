@@ -19,10 +19,17 @@ if ($price < 1) {
   validationErrorResponse(msg('min.price'));
   return;
 }
-$order = \database\addOrder($userId, $description, $price);
+$orderFromDb = \database\addOrder($userId, $description, $price);
 
-if (is_null($order)) {
+if (is_null($orderFromDb)) {
   internalErrorResponse();
   return;
 }
+$order = [
+  'order_id' => $orderFromDb['id'],
+  'customer_id' => $orderFromDb['customer_id'],
+  'description' => $orderFromDb['description'],
+  'price' => strval($orderFromDb['price']),
+  'time' => $orderFromDb['time'],
+];
 echo json_encode(['order' => $order]);
