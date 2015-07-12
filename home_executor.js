@@ -71,10 +71,10 @@ function applyUpdates(response) {
   } else {
     showNewOrders.hide();
   }
-  var doneOrExecutedOrders = response['done_or_executed'];
+  var doneOrCanceled = response['done_or_canceled'];
 
-  if (doneOrExecutedOrders) {
-    var removedCount = removeOrdersFromFeed(doneOrExecutedOrders);
+  if (doneOrCanceled) {
+    var removedCount = removeOrdersFromFeed(doneOrCanceled);
 
     if (removedCount > 0) {
       loadOrdersForExecutor(false, removedCount);

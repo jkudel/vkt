@@ -52,7 +52,7 @@ CREATE TABLE done_orders_for_executor (
   CHARACTER SET = utf8
   ENGINE = InnoDB;
 
-CREATE TABLE done_or_executed_log (
+CREATE TABLE done_or_canceled_log (
   order_id    INT UNSIGNED     NOT NULL,
   customer_id INT UNSIGNED     NOT NULL,
   time        BIGINT UNSIGNED     NOT NULL,

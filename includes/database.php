@@ -148,7 +148,7 @@ function cancelOrder($orderId, $customerId) {
 }
 
 function addChangeToLog($link, $customerId, $orderId) {
-  $stmt = prepareQuery($link, 'INSERT INTO done_or_executed_log (customer_id, order_id, time) VALUE (?, ?, ?)');
+  $stmt = prepareQuery($link, 'INSERT INTO done_or_canceled_log (customer_id, order_id, time) VALUE (?, ?, ?)');
 
   if (is_null($stmt)) {
     return false;
@@ -334,7 +334,7 @@ function insertOrderIntoDoneTables($link, $orderInfo, $executorId, $profit) {
 
 function getDoneOrExecutedLog($sinceTime) {
   return connectAndRun(null, function ($link) use ($sinceTime) {
-    $stmt = prepareQuery($link, 'SELECT order_id, customer_id FROM done_or_executed_log WHERE time >= ?');
+    $stmt = prepareQuery($link, 'SELECT order_id, customer_id FROM done_or_canceled_log WHERE time >= ?');
 
     if (is_null($stmt)) {
       return null;

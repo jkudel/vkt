@@ -30,5 +30,5 @@ if (is_null($log)) {
 echo json_encode([
   'new_orders_count' => $newOrdersCount,
   'new_orders_has_more' => $newOrdersHasMore,
-  'done_or_executed' => $log
+  'done_or_canceled' => $log
 ]);
