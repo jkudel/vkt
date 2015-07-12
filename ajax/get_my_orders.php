@@ -14,7 +14,7 @@ $untilOrderId = intval(getIfExists($_GET, 'until_order_id'));
 $count = intval(getIfExists($_GET, 'count'));
 
 if (!$count) {
-  $count = MAX_ORDER_LIST_PART_SIZE;
+  $count = 1;
 }
 $role = $userId ? \database\getUserRoleById($userId) : 0;
 
