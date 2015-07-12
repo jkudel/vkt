@@ -4,9 +4,10 @@ const AJAX_CREATE_ORDER = 'ajax/create_order.php';
 
 function handleSuccessResponse(response, successCallback, errorCallback) {
   var errorMessage = response['error_message'];
+  var errorCode = response['error_code'];
 
-  if (errorMessage) {
-    errorCallback(errorMessage);
+  if (errorMessage || errorCode) {
+    errorCallback(errorMessage, errorCode);
   } else {
     successCallback(response);
   }

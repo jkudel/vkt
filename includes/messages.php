@@ -49,5 +49,7 @@ const MESSAGES = [
   'currency' => 'руб.',
   'show.more' => 'Показать еще',
   'new.orders.available' => ' новых заказов доступно',
-  'more.new.orders.available' => ' или более новых заказов доступно'
+  'more.new.orders.available' => ' или более новых заказов доступно',
+  'already.executed.error' => 'Заказ уже исполнен',
+  'order.canceled.error' => 'Заказ был отменен'
 ];

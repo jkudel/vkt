@@ -13,8 +13,12 @@ if ($orderId == 0) {
   validationErrorResponse(msg('incorrect.order.id'));
   return;
 }
-if (!\database\cancelOrder($orderId, $userId)) {
+$result = \database\cancelOrder($orderId, $userId);
+
+if ($result === false) {
+  noObjectErrorResponse();
+} else if (!$result) {
   internalErrorResponse();
-  return;
+} else {
+  successResponse();
 }
-successResponse();

@@ -21,7 +21,10 @@ function cancelOrder(orderId, orderBlock, errorPlaceholder) {
   ajaxCancelOrder(orderId, function () {
     removeOrderBlock(orderBlock, orderId);
     loadOrdersForCustomer(false, 1);
-  }, function (errorMessage) {
+  }, function (errorMessage, errorCode) {
+    if (errorCode == ERROR_CODE_NO_OBJECT) {
+      errorMessage = msg('already.executed.error');
+    }
     errorPlaceholder.text(errorMessage);
   });
 }

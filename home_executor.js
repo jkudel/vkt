@@ -46,7 +46,10 @@ function executeOrder(orderId, customerId, price, orderBlock, errorPlaceholder) 
     balanceElement.text(newBalance.toFixed(2));
     removeOrderBlock(orderBlock, getFullKey(customerId, orderId));
     loadOrdersForExecutor(false, 1);
-  }, function (errorMessage) {
+  }, function (errorMessage, errorCode) {
+    if (errorCode == ERROR_CODE_NO_OBJECT) {
+      errorMessage = msg('order.canceled.error');
+    }
     errorPlaceholder.text(errorMessage);
   });
 }

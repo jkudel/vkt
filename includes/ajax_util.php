@@ -4,9 +4,14 @@ require_once('util.php');
 const ERROR_VALIDATION = 0;
 const ERROR_INTERNAL = 1;
 const NOT_AUTH_ERROR = 2;
+const NO_OBJECT = 3;
 
 function internalErrorResponse() {
   echo json_encode(['error_message' => msg('internal.error'), 'error_code' => ERROR_INTERNAL]);
+}
+
+function noObjectErrorResponse() {
+  echo json_encode(['error_message' => msg('internal.error'), 'error_code' => NO_OBJECT]);
 }
 
 function notAuthErrorResponse() {

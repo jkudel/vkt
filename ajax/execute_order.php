@@ -14,8 +14,12 @@ if ($orderId == 0 || $customerId == 0) {
   validationErrorResponse(msg('incorrect.order.id'));
   return;
 }
-if (!\database\markOrderExecuted($orderId, $customerId, $userId, COMMISSION)) {
+$result = \database\markOrderExecuted($orderId, $customerId, $userId, COMMISSION);
+
+if ($result === false) {
+  noObjectErrorResponse();
+} else if (!$result) {
   internalErrorResponse();
-  return;
+} else {
+  successResponse();
 }
-successResponse();

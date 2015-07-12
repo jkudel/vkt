@@ -1,3 +1,5 @@
+const ERROR_CODE_NO_OBJECT = 3;
+
 function msg(key) {
   return messages[key];
 }
