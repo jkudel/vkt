@@ -82,20 +82,20 @@ function applyUpdates(response) {
   }
 }
 
-function scheduleCheckingUpdates() {
+function scheduleCheckingUpdatesForExecutor() {
   setTimeout(function () {
     if ($('#view-mode').val() != 'available') {
-      scheduleCheckingUpdates();
+      scheduleCheckingUpdatesForExecutor();
       return;
     }
     var params = buildSinceParamsByFirstOrder();
 
     ajaxCheckForUpdates(params, function (response) {
       applyUpdates(response);
-      scheduleCheckingUpdates();
+      scheduleCheckingUpdatesForExecutor();
     }, function (errorMessage) {
       $('#view-mode').next('.error-placeholder').text(errorMessage);
-      scheduleCheckingUpdates();
+      scheduleCheckingUpdatesForExecutor();
     });
   }, 5000);
 }
@@ -144,5 +144,5 @@ $(document).ready(function () {
     loadNewWaitingOrders();
   });
   loadOrdersForExecutor(false);
-  scheduleCheckingUpdates();
+  scheduleCheckingUpdatesForExecutor();
 });

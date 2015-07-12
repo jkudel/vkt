@@ -56,6 +56,27 @@ function validateNewOrderForm() {
   return true;
 }
 
+function scheduleCheckingUpdatesForCustomer() {
+  setTimeout(function () {
+    if ($('#view-mode').val() == 'done') {
+      loadNewDoneOrders(scheduleCheckingUpdatesForCustomer);
+    }
+  }, 5000);
+}
+
+function loadNewDoneOrders(runAfter) {
+  var params = buildSinceParamsByFirstOrder();
+  params['done'] = 1;
+
+  ajaxGetMyOrders(params, function (response) {
+    prependLoadedOrdersToFeed(response);
+    runAfter();
+  }, function (errorMessage) {
+    $('#view-mode').next('.error-placeholder').text(errorMessage);
+    runAfter();
+  });
+}
+
 function createOrder(form) {
   ajaxSubmitForm(AJAX_CREATE_ORDER, form, function (response) {
     $('#new-order-form').hide();
@@ -81,7 +102,7 @@ feedData.keyFunc = function (order) {
   return order['order_id'];
 };
 
-feedData.buildBlockFunc = function(data) {
+feedData.buildBlockFunc = function (data) {
   var html = buildBaseOrderBlock(data, false);
   var doneTime = data['done_time'];
   var presentableDoneTime = doneTime ? new Date(doneTime) : '';
@@ -100,7 +121,7 @@ feedData.buildBlockFunc = function(data) {
   return '<div>' + html + '</div>';
 };
 
-  $(document).ready(function () {
+$(document).ready(function () {
   initViewModeChooser('waiting', function () {
     loadOrdersForCustomer(true);
   });
@@ -136,5 +157,5 @@ feedData.buildBlockFunc = function(data) {
     loadOrdersForCustomer(false);
   });
   loadOrdersForCustomer(false);
-  //setInterval(loadOrdersForCustomer, 5000);
+  scheduleCheckingUpdatesForCustomer();
 });
