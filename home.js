@@ -58,11 +58,11 @@ function prependLoadedOrdersToFeed(response) {
   var filteredList = addOrdersToFeedSet(response);
 
   if (filteredList) {
-    prependOrdersToFeed(filteredList);
+    prependOrdersToFeed(filteredList, response['has_more'] == 'true');
   }
 }
 
-function prependOrdersToFeed(list) {
+function prependOrdersToFeed(list, hasMore) {
   feedOrders = list.concat(feedOrders);
   var ordersBlock = $('#orders');
   ordersBlock.prepend(buildHtmlForOrdersList(list));
@@ -79,7 +79,11 @@ function prependOrdersToFeed(list) {
       }
       feedOrders = feedOrders.slice(0, start);
       ordersBlock.children().slice(start).remove();
+      hasMore = true;
     }
+  }
+  if (hasMore) {
+    $('#show-more').show();
   }
 }
 
