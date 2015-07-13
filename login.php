@@ -6,7 +6,7 @@
   <input id="new-user" type="radio" name="login_or_register"/>
   <label for="new-user"><?=msg('new.user')?></label>
 </div>
-<form id="login-form" action="#" method="POST">
+<form id="login-form" class="hidden" action="#" method="POST">
   <div class="field">
     <label for="login-user-name"><?=msg('user.name')?>:</label>
     <input id="login-user-name" name="user-name" type="text"/>

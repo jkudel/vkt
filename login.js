@@ -83,6 +83,23 @@ function submitFormAndGoHome(url, form) {
   });
 }
 
+function updateFormShown() {
+  if ($('#already-registered').is(':checked')) {
+    $('#login-form').fadeIn('fast');
+    $('#register-form').hide();
+  } else {
+    $('#login-form').hide();
+    $('#register-form').fadeIn('fast');
+  }
+}
+
+function resetPageState() {
+  var newUser = getUrlParameters()['new'] == 'true';
+  $('#already-registered').prop('checked', !newUser);
+  $('#new-user').prop('checked', newUser);
+  updateFormShown();
+}
+
 $(document).ready(function () {
   $('#login-form').submit(function (e) {
     e.preventDefault();
@@ -117,13 +134,9 @@ $(document).ready(function () {
     onTheFlyValidationEnabled = false;
     $('input+span').text('');
     $('#error-placeholder').text('');
-
-    if ($('#already-registered').is(':checked')) {
-      $('#login-form').fadeIn('fast');
-      $('#register-form').hide();
-    } else {
-      $('#login-form').hide();
-      $('#register-form').fadeIn('fast');
-    }
+    updateFormShown();
+    history.pushState({}, '', '?new=' + $('#new-user').is(':checked'));
   });
+  $(window).bind('popstate', resetPageState);
+  resetPageState();
 });
