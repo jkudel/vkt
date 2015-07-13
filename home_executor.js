@@ -59,11 +59,14 @@ function applyUpdates(response) {
   var showNewOrders = $('#show-new-orders');
 
   if (newOrdersCount) {
-    if (response['new_orders_show_more']) {
-      showNewOrders.text(newOrdersCount + msg('more.new.orders.available'));
+    var newOrdersNotification;
+
+    if (response['new_orders_has_more']) {
+      newOrdersNotification = msg('new.orders.available') + ' ' + newOrdersCount + ' ' + msg('or.more');
     } else {
-      showNewOrders.text(newOrdersCount + msg('new.orders.available'));
+      newOrdersNotification = msg('new.orders.available') + ' ' + newOrdersCount;
     }
+    showNewOrders.text(newOrdersNotification);
     showNewOrders.show();
   } else {
     showNewOrders.hide();

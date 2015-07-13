@@ -11,7 +11,7 @@ if (!is_string($userName) || strlen($userName) == 0) {
   return;
 }
 if (strlen($userName) > 20) {
-  validationErrorResponse(msg('user.name.length.error'), 'user-name');
+  validationErrorResponse(msg('user.name.length.error', 20), 'user-name');
   return;
 }
 $userName = strtolower($userName);
@@ -25,7 +25,7 @@ if (!is_string($password) || strlen($password) == 0) {
   return;
 }
 if (strlen($password) < 4 || strlen($password) > 20) {
-  validationErrorResponse(msg('password.length.error'), 'password');
+  validationErrorResponse(msg('password.length.error', 4, 20), 'password');
   return;
 }
 if ($repeatPassword !== $password) {

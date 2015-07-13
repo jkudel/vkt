@@ -50,7 +50,7 @@ function validateNewOrderForm() {
     return false;
   }
   if (decPrice.indexOf('0') == 0) {
-    price.nextAll('span').text(msg('min.price.error'));
+    price.nextAll('span').text(msg('min.price.error') + ' 1 ' + msg('currency'));
     return false;
   }
   return true;

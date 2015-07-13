@@ -28,7 +28,7 @@ function validateRegisterForm() {
     userName.next('span').text(msg('no.username.error'));
     result = false;
   } else if (userVal.length > 20) {
-    password.next('span').text(msg('user.name.length.error'));
+    password.next('span').text(msg('user.name.length.error', 20));
     result = false;
   }  else if (!userVal.match(/^\w+$/)) {
     userName.next('span').text(msg('invalid.char.in.username.error'));
@@ -43,7 +43,7 @@ function validateRegisterForm() {
     password.next('span').text(msg('no.password.error'));
     result = false;
   } else if (passwordVal.length < 4 || passwordVal.length > 20) {
-    password.next('span').text(msg('password.length.error'));
+    password.next('span').text(msg('password.length.error', 4, 20));
     result = false;
   } else {
     password.next('span').text('');

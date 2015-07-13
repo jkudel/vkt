@@ -47,13 +47,15 @@ function endsWidth($s, $substring) {
   return substr($s, strlen($s) - $l, $l) === $substring;
 }
 
-function msg($key) {
-  $value = getIfExists(MESSAGES, $key);
+function msg($key, ...$params) {
+  $format = getIfExists(MESSAGES, $key);
 
-  if (is_null($value)) {
+  if (is_null($format)) {
     logError('unknown message key ' . $key);
     return 'unknown';
-  } else {
-    return $value;
   }
+  $patterns = array_map(function ($index) {
+    return '{' . $index . '}';
+  }, array_keys($params));
+  return str_replace($patterns, $params, $format);
 }

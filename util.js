@@ -1,7 +1,13 @@
 const ERROR_CODE_NO_OBJECT = 3;
 
-function msg(key) {
-  return messages[key];
+function msg() {
+  var key = arguments[0];
+  var args = Array.prototype.slice.call(arguments, 1);
+  var format = messages[key];
+
+  return format.replace(/{(\d+)}/g, function (match, number) {
+    return number in args ? args[number] : match;
+  });
 }
 
 function getCommission() {
