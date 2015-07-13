@@ -26,10 +26,10 @@ if (is_null($orderFromDb)) {
   return;
 }
 $order = [
-  'order_id' => $orderFromDb['id'],
+  'order_id' => getCompositeOrderId($orderFromDb),
   'customer_id' => $orderFromDb['customer_id'],
   'description' => $orderFromDb['description'],
-  'price' => strval($orderFromDb['price']),
+  'price' => number_format($orderFromDb['price'], 2),
   'time' => $orderFromDb['time'],
 ];
 echo json_encode(['order' => $order]);

@@ -6,11 +6,11 @@ function getIfExists(array $array, $key) {
 }
 
 function logInfo($message) {
-  logMessage($message, debug_backtrace(0, 2), 'INFO');
+  logMessage($message, debug_backtrace(0, 3), 'INFO');
 }
 
 function logError($message) {
-  logMessage($message, debug_backtrace(0, 5), 'ERROR');
+  logMessage($message, debug_backtrace(0, 8), 'ERROR');
 }
 
 function logMessage($message, $trace, $level) {

@@ -1,35 +1,29 @@
 const ORDER_LIST_PART_SIZE = 3;
 
-var feedData = {
-  buildBlockFunc: null,
-  keyFunc: null
-};
-
+var buildOrderBlockInFeed = null;
 var feedOrdersIdSet = {};
 var feedOrders = [];
 
-function buildParamsUntilLastOrder() {
+function buildParamsUntilLastOrder(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
 
   if (feedOrders.length == 0) {
     return result;
   }
   var order = feedOrders[feedOrders.length - 1];
-  result['until_time'] = order['time'];
-  result['until_customer_id'] = order['customer_id'];
+  result['until_time'] = order[timeFieldName];
   result['until_order_id'] = order['order_id'];
   return result;
 }
 
-function buildParamsSinceFirstOrder() {
+function buildParamsSinceFirstOrder(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
 
   if (feedOrders.length == 0) {
     return result;
   }
   var order = feedOrders[0];
-  result['since_time'] = order['time'];
-  result['since_customer_id'] = order['customer_id'];
+  result['since_time'] = order[timeFieldName];
   result['since_order_id'] = order['order_id'];
   return result;
 }
@@ -44,10 +38,10 @@ function addOrdersToFeedSet(response) {
 
   for (var i = 0; i < list.length; i++) {
     var order = list[i];
-    var key = feedData.keyFunc(order);
+    var orderId = order['order_id'];
 
-    if (!feedOrdersIdSet[key]) {
-      feedOrdersIdSet[key] = true;
+    if (!feedOrdersIdSet[orderId]) {
+      feedOrdersIdSet[orderId] = true;
       filteredList.push(order);
     }
   }
@@ -74,8 +68,8 @@ function prependOrdersToFeed(list, hasMore) {
       var start = feedOrders.length - count;
 
       for (var i = start; i < feedOrders.length; i++) {
-        var key = feedData.keyFunc(feedOrders[i]);
-        delete feedOrdersIdSet[key];
+        var orderId = feedOrders[i]['order_id'];
+        delete feedOrdersIdSet[orderId];
       }
       feedOrders = feedOrders.slice(0, start);
       ordersBlock.children().slice(start).remove();
@@ -103,14 +97,14 @@ function appendLoadedOrdersToFeed(response) {
   }
 }
 
-function removeOrderBlock(selector, key) {
+function removeOrderBlock(selector, orderId) {
   selector.remove();
   var indexToRemove = -1;
 
   for (var i = 0; i < feedOrders.length; i++) {
     var order = feedOrders[i];
 
-    if (feedData.keyFunc(order) == key) {
+    if (order['order_id'] == orderId) {
       indexToRemove = i;
       break;
     }
@@ -118,7 +112,7 @@ function removeOrderBlock(selector, key) {
   if (indexToRemove >= 0) {
     feedOrders.splice(indexToRemove, 1);
   }
-  delete feedOrdersIdSet[key];
+  delete feedOrdersIdSet[orderId];
 }
 
 function removeAllFromFeed() {
@@ -127,28 +121,20 @@ function removeAllFromFeed() {
   feedOrdersIdSet = {};
 }
 
-function removeOrdersFromFeed(orders) {
+function removeOrdersFromFeed(orderIds) {
   var ordersToRemove = {};
 
-  for (var i = 0; i < orders.length; i++) {
-    var order = orders[i];
-    var orderId = order['order_id'];
-    var customerId = order['customer_id'];
-
-    if (orderId && customerId) {
-      ordersToRemove[customerId + '_' + orderId] = order;
-    }
+  for (var i = 0; i < orderIds.length; i++) {
+    ordersToRemove[orderIds[i]] = true;
   }
   var result = 0;
 
   $('#orders').children().each(function () {
     var executeLink = $(this).find('.execute-order-link');
     var orderId = executeLink.data('order-id');
-    var customerId = executeLink.data('customer-id');
-    var order = ordersToRemove[customerId + '_' + orderId];
 
-    if (order) {
-      removeOrderBlock($(this), feedData.keyFunc(order));
+    if (ordersToRemove[orderId]) {
+      removeOrderBlock($(this), orderId);
       result++;
     }
   });
@@ -159,14 +145,14 @@ function buildHtmlForOrdersList(list) {
   var builder = [];
 
   for (var i = 0; i < list.length; i++) {
-    builder.push(feedData.buildBlockFunc(list[i]));
+    builder.push(buildOrderBlockInFeed(list[i]));
   }
   return builder.join('');
 }
 
 function buildBaseOrderBlock(data, showProfit) {
   var time = data['time'];
-  var presentableTime = time ? new Date(time) : '';
+  var presentableTime = time ? new Date(time * 1000).toLocaleString() : '';
   var html = '<div>' + data['description'] + '</div>';
 
   if (data['price']) {

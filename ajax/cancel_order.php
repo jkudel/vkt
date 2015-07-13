@@ -7,13 +7,13 @@ if (is_null($userId)) {
   notAuthErrorResponse();
   return;
 }
-$orderId = intval(getIfExists($_POST, 'order_id'));
+$parsedOrderId = getParsedOrderId($_POST, 'order_id');
 
-if ($orderId == 0) {
+if (!$parsedOrderId) {
   validationErrorResponse(msg('incorrect.order.id'));
   return;
 }
-$result = \database\cancelOrder($orderId, $userId);
+$result = \database\cancelOrder($parsedOrderId['order_id'], $userId);
 
 if ($result === false) {
   noObjectErrorResponse();

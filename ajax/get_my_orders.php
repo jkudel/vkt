@@ -8,9 +8,15 @@ if (is_null($userId)) {
   return;
 }
 $sinceTime = intval(getIfExists($_GET, 'since_time'));
-$sinceOrderId = intval(getIfExists($_GET, 'since_order_id'));
+$sinceParsedOrderId = getParsedOrderId($_GET, 'since_order_id');
+$sinceCustomerId = $sinceParsedOrderId ? $sinceParsedOrderId['customer_id'] : 0;
+$sinceOrderId = $sinceParsedOrderId ? $sinceParsedOrderId['order_id'] : 0;
+
 $untilTime = intval(getIfExists($_GET, 'until_time'));
-$untilOrderId = intval(getIfExists($_GET, 'until_order_id'));
+$untilParsedOrderId = getParsedOrderId($_GET, 'until_order_id');
+$untilCustomerId = $untilParsedOrderId ? $untilParsedOrderId['customer_id'] : 0;
+$untilOrderId = $untilParsedOrderId ? $untilParsedOrderId['order_id'] : 0;
+
 $count = intval(getIfExists($_GET, 'count'));
 
 if (!$count) {
@@ -19,9 +25,6 @@ if (!$count) {
 $role = $userId ? \database\getUserRoleById($userId) : 0;
 
 if ($role === ROLE_EXECUTOR) {
-  $sinceCustomerId = intval(getIfExists($_GET, 'since_customer_id'));
-  $untilCustomerId = intval(getIfExists($_GET, 'until_customer_id'));
-
   $orders = \database\getDoneOrdersForExecutor(
     $userId,
     $sinceTime, $sinceCustomerId, $sinceOrderId,
@@ -42,7 +45,7 @@ $list = [];
 
 foreach ($orders as $order) {
   $element = [
-    'order_id' => $order['id'],
+    'order_id' => getCompositeOrderId($order),
     'customer_id' => $order['customer_id'],
     'description' => $order['description'],
     'time' => $order['time']

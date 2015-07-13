@@ -2,11 +2,15 @@
 require_once('../includes/common.php');
 
 $sinceTime = intval(getIfExists($_GET, 'since_time'));
-$sinceCustomerId = intval(getIfExists($_GET, 'since_customer_id'));
-$sinceOrderId = intval(getIfExists($_GET, 'since_order_id'));
+$sinceParsedOrderId = getParsedOrderId($_GET, 'since_order_id');
+$sinceCustomerId = $sinceParsedOrderId ? $sinceParsedOrderId['customer_id'] : 0;
+$sinceOrderId = $sinceParsedOrderId ? $sinceParsedOrderId['order_id'] : 0;
+
 $untilTime = intval(getIfExists($_GET, 'until_time'));
-$untilCustomerId = intval(getIfExists($_GET, 'until_customer_id'));
-$untilOrderId = intval(getIfExists($_GET, 'until_order_id'));
+$untilParsedOrderId = getParsedOrderId($_GET, 'until_order_id');
+$untilCustomerId = $untilParsedOrderId ? $untilParsedOrderId['customer_id'] : 0;
+$untilOrderId = $untilParsedOrderId ? $untilParsedOrderId['order_id'] : 0;
+
 $count = intval(getIfExists($_GET, 'count'));
 
 if (!$count) {
@@ -25,10 +29,10 @@ $list = [];
 
 foreach ($orders as $order) {
   array_push($list, [
-    'order_id' => $order['id'],
+    'order_id' => getCompositeOrderId($order),
     'customer_id' => $order['customer_id'],
     'description' => $order['description'],
-    'price' => strval($order['price']),
+    'price' => number_format($order['price'], 2),
     'time' => $order['time'],
   ]);
 

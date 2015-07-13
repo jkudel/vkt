@@ -1,7 +1,3 @@
-function getFullKey(customerId, orderId) {
-  return customerId + '_' + orderId;
-}
-
 function loadOrdersForExecutor(reload, count) {
   if (reload) {
     removeAllFromFeed();
@@ -14,12 +10,13 @@ function loadOrdersForExecutor(reload, count) {
   var errorCallback = function (errorMessage) {
     viewMode.next('.error-placeholder').text(errorMessage);
   };
-  var params = buildParamsUntilLastOrder();
+  var done = viewMode.val() == 'done';
+  var params = buildParamsUntilLastOrder(done ? 'done_time' : 'time');
 
   if (count) {
     params['count'] = count;
   }
-  if (viewMode.val() == 'done') {
+  if (done) {
     params['done'] = 1;
     ajaxGetMyOrders(params, successCallback, errorCallback);
   } else {
@@ -28,7 +25,7 @@ function loadOrdersForExecutor(reload, count) {
 }
 
 function loadNewWaitingOrders() {
-  var params = buildParamsSinceFirstOrder();
+  var params = buildParamsSinceFirstOrder('time');
 
   ajaxGetWaitingOrders(params, function (response) {
     $('#show-new-orders').hide();
@@ -38,13 +35,13 @@ function loadNewWaitingOrders() {
   });
 }
 
-function executeOrder(orderId, customerId, price, orderBlock, errorPlaceholder) {
-  ajaxExecuteOrder(orderId, customerId, function () {
+function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
+  ajaxExecuteOrder(orderId, function () {
     var balanceElement = $('#balance');
     var delta = (parseFloat(price) * (1 - getCommission()));
     var newBalance = parseFloat(balanceElement.text()) + delta;
     balanceElement.text(newBalance.toFixed(2));
-    removeOrderBlock(orderBlock, getFullKey(customerId, orderId));
+    removeOrderBlock(orderBlock, orderId);
     loadOrdersForExecutor(false, 1);
   }, function (errorMessage, errorCode) {
     if (errorCode == ERROR_CODE_NO_OBJECT) {
@@ -88,7 +85,7 @@ function scheduleCheckingUpdatesForExecutor() {
       scheduleCheckingUpdatesForExecutor();
       return;
     }
-    var params = buildParamsSinceFirstOrder();
+    var params = buildParamsSinceFirstOrder('time');
 
     ajaxCheckForUpdates(params, function (response) {
       applyUpdates(response);
@@ -100,11 +97,7 @@ function scheduleCheckingUpdatesForExecutor() {
   }, 5000);
 }
 
-feedData.keyFunc = function (order) {
-  return getFullKey(order['customer_id'], order['order_id']);
-};
-
-feedData.buildBlockFunc = function(data) {
+buildOrderBlockInFeed = function(data) {
   var html = buildBaseOrderBlock(data, true);
 
   if (data['done_time']) {
@@ -113,7 +106,6 @@ feedData.buildBlockFunc = function(data) {
   var executeButton =
     '<a class="execute-order-link" href="#" ' +
     'data-order-id="' + data['order_id'] + '" ' +
-    'data-customer-id="' + data['customer_id'] + '" ' +
     'data-order-price="' + data['price'] + '">' +
     msg('execute.order') + '</a>';
   return '<div>' + html +
@@ -132,8 +124,7 @@ $(document).ready(function () {
     clearErrors();
     var link = $(this);
     var orderBlock = link.parent().parent();
-    executeOrder(link.data('order-id'), link.data('customer-id'),
-      link.data('order-price'), orderBlock, link.next('span'));
+    executeOrder(link.data('order-id'), link.data('order-price'), orderBlock, link.next('span'));
   });
   $('#show-more').click(function (e) {
     e.preventDefault();

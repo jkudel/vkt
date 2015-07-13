@@ -7,7 +7,7 @@ function handleSuccessResponse(response, successCallback, errorCallback) {
   var errorCode = response['error_code'];
 
   if (errorMessage || errorCode) {
-    errorCallback(errorMessage, errorCode);
+    errorCallback(errorMessage, errorCode, response);
   } else {
     successCallback(response);
   }
@@ -26,8 +26,8 @@ function handleErrorResponse(xhr, error, errorCallback) {
 /**
  * Params:
  *   done, count,
- *   since_time, since_customer_id, since_order_id,
- *   until_time, until_customer_id, until_order_id
+ *   since_time, since_order_id,
+ *   until_time, until_order_id
  */
 function ajaxGetMyOrders(params, successCallback, errorCallback) {
   $.ajax({
@@ -46,8 +46,8 @@ function ajaxGetMyOrders(params, successCallback, errorCallback) {
 /**
  * Params:
  *   count,
- *   since_time, since_customer_id, since_order_id,
- *   until_time, until_customer_id, until_order_id
+ *   since_time, since_order_id,
+ *   until_time, until_order_id
  */
 function ajaxGetWaitingOrders(params, successCallback, errorCallback) {
   $.ajax({
@@ -80,14 +80,13 @@ function ajaxCancelOrder(orderId, successCallback, errorCallback) {
   });
 }
 
-function ajaxExecuteOrder(orderId, customerId, successCallback, errorCallback) {
+function ajaxExecuteOrder(orderId, successCallback, errorCallback) {
   $.ajax({
     url: 'ajax/execute_order.php',
     type: "POST",
     dataType: "json",
     data: {
       'order_id': orderId,
-      'customer_id': customerId
     },
     success: function (response) {
       handleSuccessResponse(response, successCallback, errorCallback);

@@ -3,8 +3,9 @@ function loadOrdersForCustomer(reload, count) {
     removeAllFromFeed();
   }
   var viewMode = $('#view-mode');
-  var params = buildParamsUntilLastOrder();
-  params['done'] = viewMode.val() == 'done' ? 1 : 0;
+  var done = viewMode.val() == 'done' ? 1 : 0;
+  var params = buildParamsUntilLastOrder(done ? 'done_time' : 'time');
+  params['done'] = done;
 
   if (count) {
     params['count'] = count;
@@ -66,7 +67,7 @@ function scheduleCheckingUpdatesForCustomer() {
 }
 
 function loadNewDoneOrders(runAfter) {
-  var params = buildParamsSinceFirstOrder();
+  var params = buildParamsSinceFirstOrder('done_time');
   params['done'] = 1;
 
   ajaxGetMyOrders(params, function (response) {
@@ -99,14 +100,10 @@ function clearNewOrderFields() {
   $('#new-order-price').val('');
 }
 
-feedData.keyFunc = function (order) {
-  return order['order_id'];
-};
-
-feedData.buildBlockFunc = function (data) {
+buildOrderBlockInFeed = function (data) {
   var html = buildBaseOrderBlock(data, false);
   var doneTime = data['done_time'];
-  var presentableDoneTime = doneTime ? new Date(doneTime) : '';
+  var presentableDoneTime = doneTime ? new Date(doneTime * 1000).toLocaleString() : '';
   var executor = data['executor'];
 
   if (doneTime && executor) {

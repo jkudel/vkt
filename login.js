@@ -71,7 +71,7 @@ function validateRegisterForm() {
 function submitFormAndGoHome(url, form) {
   ajaxSubmitForm(url, form, function () {
     window.location.href = 'index.php';
-  }, function (errorMessage) {
+  }, function (errorMessage, errorCode, response) {
     var fieldName = response['field_name'];
     var field = fieldName ? form.find('input[name="' + fieldName + '"]+span') : null;
 

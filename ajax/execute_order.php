@@ -7,14 +7,14 @@ if (is_null($userId)) {
   notAuthErrorResponse();
   return;
 }
-$orderId = intval(getIfExists($_POST, 'order_id'));
-$customerId = intval(getIfExists($_POST, 'customer_id'));
+$parsedOrderId = getParsedOrderId($_POST, 'order_id');
 
-if ($orderId == 0 || $customerId == 0) {
+if (!$parsedOrderId) {
   validationErrorResponse(msg('incorrect.order.id'));
   return;
 }
-$result = \database\markOrderExecuted($orderId, $customerId, $userId, COMMISSION);
+$result = \database\markOrderExecuted(
+  $parsedOrderId['order_id'], $parsedOrderId['customer_id'], $userId, COMMISSION);
 
 if ($result === false) {
   noObjectErrorResponse();
