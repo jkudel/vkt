@@ -8,28 +8,30 @@ var feedData = {
 var feedOrdersIdSet = {};
 var feedOrders = [];
 
-function buildUntilParamsByLastOrder() {
+function buildParamsUntilLastOrder() {
+  var result = {count: ORDER_LIST_PART_SIZE};
+
   if (feedOrders.length == 0) {
-    return {};
+    return result;
   }
   var order = feedOrders[feedOrders.length - 1];
-  return {
-    'until_time': order['time'],
-    'until_customer_id': order['customer_id'],
-    'until_order_id': order['order_id']
-  };
+  result['until_time'] = order['time'];
+  result['until_customer_id'] = order['customer_id'];
+  result['until_order_id'] = order['order_id'];
+  return result;
 }
 
-function buildSinceParamsByFirstOrder() {
+function buildParamsSinceFirstOrder() {
+  var result = {count: ORDER_LIST_PART_SIZE};
+
   if (feedOrders.length == 0) {
-    return {};
+    return result;
   }
   var order = feedOrders[0];
-  return {
-    'since_time': order['time'],
-    'since_customer_id': order['customer_id'],
-    'since_order_id': order['order_id']
-  };
+  result['since_time'] = order['time'];
+  result['since_customer_id'] = order['customer_id'];
+  result['since_order_id'] = order['order_id'];
+  return result;
 }
 
 function addOrdersToFeedSet(response) {
@@ -200,4 +202,5 @@ function initViewModeChooser(defaultViewMode, reloadFunc) {
     reloadFunc();
   });
   updateSelectedViewMode(viewMode, defaultViewMode);
+  return viewMode;
 }

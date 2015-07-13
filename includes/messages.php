@@ -51,5 +51,6 @@ const MESSAGES = [
   'new.orders.available' => ' новых заказов доступно',
   'more.new.orders.available' => ' или более новых заказов доступно',
   'already.executed.error' => 'Заказ уже исполнен',
-  'order.canceled.error' => 'Заказ был отменен'
+  'order.canceled.error' => 'Заказ был отменен',
+  'refresh' => 'Обновить'
 ];

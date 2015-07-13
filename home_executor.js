@@ -3,9 +3,6 @@ function getFullKey(customerId, orderId) {
 }
 
 function loadOrdersForExecutor(reload, count) {
-  if (!count) {
-    count = ORDER_LIST_PART_SIZE;
-  }
   if (reload) {
     removeAllFromFeed();
   }
@@ -17,9 +14,11 @@ function loadOrdersForExecutor(reload, count) {
   var errorCallback = function (errorMessage) {
     viewMode.next('.error-placeholder').text(errorMessage);
   };
-  var params = buildUntilParamsByLastOrder();
-  params['count'] = count;
+  var params = buildParamsUntilLastOrder();
 
+  if (count) {
+    params['count'] = count;
+  }
   if (viewMode.val() == 'done') {
     params['done'] = 1;
     ajaxGetMyOrders(params, successCallback, errorCallback);
@@ -29,7 +28,8 @@ function loadOrdersForExecutor(reload, count) {
 }
 
 function loadNewWaitingOrders() {
-  var params = buildSinceParamsByFirstOrder();
+  var params = buildParamsSinceFirstOrder();
+
   ajaxGetWaitingOrders(params, function (response) {
     $('#show-new-orders').hide();
     prependLoadedOrdersToFeed(response);
@@ -88,7 +88,7 @@ function scheduleCheckingUpdatesForExecutor() {
       scheduleCheckingUpdatesForExecutor();
       return;
     }
-    var params = buildSinceParamsByFirstOrder();
+    var params = buildParamsSinceFirstOrder();
 
     ajaxCheckForUpdates(params, function (response) {
       applyUpdates(response);

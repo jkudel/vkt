@@ -1,15 +1,14 @@
 function loadOrdersForCustomer(reload, count) {
-  if (!count) {
-    count = ORDER_LIST_PART_SIZE;
-  }
   if (reload) {
     removeAllFromFeed();
   }
   var viewMode = $('#view-mode');
-  var params = buildUntilParamsByLastOrder();
+  var params = buildParamsUntilLastOrder();
   params['done'] = viewMode.val() == 'done' ? 1 : 0;
-  params['count'] = count;
 
+  if (count) {
+    params['count'] = count;
+  }
   ajaxGetMyOrders(params, function (response) {
     appendLoadedOrdersToFeed(response);
   }, function (errorMessage) {
@@ -60,12 +59,14 @@ function scheduleCheckingUpdatesForCustomer() {
   setTimeout(function () {
     if ($('#view-mode').val() == 'done') {
       loadNewDoneOrders(scheduleCheckingUpdatesForCustomer);
+    } else {
+      scheduleCheckingUpdatesForCustomer();
     }
   }, 5000);
 }
 
 function loadNewDoneOrders(runAfter) {
-  var params = buildSinceParamsByFirstOrder();
+  var params = buildParamsSinceFirstOrder();
   params['done'] = 1;
 
   ajaxGetMyOrders(params, function (response) {
@@ -121,8 +122,24 @@ feedData.buildBlockFunc = function (data) {
   return '<div>' + html + '</div>';
 };
 
+function updateRefreshWaitingOrdersButton() {
+  if ($('#view-mode').val() == 'waiting') {
+    $('#refresh-waiting-orders').show();
+  } else {
+    $('#refresh-waiting-orders').hide();
+  }
+}
 $(document).ready(function () {
-  initViewModeChooser('waiting', function () {
+  var viewMode = initViewModeChooser('waiting', function () {
+    loadOrdersForCustomer(true);
+  });
+  viewMode.change(function () {
+    updateRefreshWaitingOrdersButton();
+  });
+  updateRefreshWaitingOrdersButton();
+
+  $('#refresh-waiting-orders').click(function (e) {
+    e.preventDefault();
     loadOrdersForCustomer(true);
   });
 

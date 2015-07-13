@@ -28,6 +28,8 @@
     <option value="done"><?= msg('view.mode.done') ?></option>
   </select>
 
+  <div><a href="#" id="refresh-waiting-orders" class="hidden"><?= msg('refresh') ?></a></div>
+
   <div class="error-placeholder"></div>
   <div id="orders"></div>
   <div><a href="#" id="show-more" class="hidden"><?= msg('show.more') ?></a></div>
