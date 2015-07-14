@@ -3,29 +3,75 @@ namespace database;
 
 const CANNOT_BIND_SQL_PARAMS = 'cannot bind params to sql query';
 
-function addUser($userName, $passwordHash, $role) {
-  return connectAndRun(0, function ($link) use ($userName, $passwordHash, $role) {
-    $stmt = prepareQuery($link, 'INSERT INTO users (name, password, role) VALUES(?, ?, ?)');
+/** @noinspection PhpUnusedLocalVariableInspection */
+$hostAndDb2link = [];
 
-    if (is_null($stmt)) {
-      return 0;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 'ssi', $userName, $passwordHash, $role)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return 0;
-    }
-    if (!executeStatement($stmt)) {
-      return 0;
-    }
-    return mysqli_insert_id($link);
-  });
+function addUser($userName, $passwordHash, $role) {
+  $dbInfo = getDbForSequences();
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link || !beginTransaction($link)) {
+    return 0;
+  }
+  $userId = getNextUserId($link);
+
+  if (!$userId || !insertUser($userId, $userName, $passwordHash, $role)) {
+    rollbackTransaction($link);
+    return 0;
+  }
+  return commitTransaction($link) ? $userId : 0;
+}
+
+function insertUser($userId, $userName, $passwordHash, $role) {
+  $dbInfo = getDbForUsers($userId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link) {
+    return false;
+  }
+  $stmt = prepareQuery($link, 'INSERT INTO users (id, name, password, role) VALUES(?, ?, ?, ?)');
+
+  if (is_null($stmt)) {
+    return false;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'issi', $userId, $userName, $passwordHash, $role)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return false;
+  }
+  if (!executeStatement($stmt)) {
+    return false;
+  }
+  return true;
+}
+
+function getNextUserId($link) {
+  if (!mysqli_query($link, 'UPDATE sequences SET user_id = user_id + 1')) {
+    logMysqlError('cannot execute query', $link);
+    rollbackTransaction($link);
+    return 0;
+  }
+  $result = mysqli_query($link, 'SELECT user_id FROM sequences');
+
+  if (!$result) {
+    logMysqlError('cannot execute query', $link);
+    rollbackTransaction($link);
+    return 0;
+  }
+  $value = intval(fetchOnlyValue($result));
+  mysqli_free_result($result);
+  return $value;
 }
 
 /*
  * Returns 0 if user not found, and NULL if error occurred
  */
 function getUserId($name) {
-  return connectAndRun(null, function ($link) use ($name) {
+  foreach (getAllDbsForUsers() as $dbInfo) {
+    $link = connect($dbInfo);
+
+    if (!$link) {
+      return null;
+    }
     $stmt = prepareQuery($link, 'SELECT id FROM users WHERE name=?');
 
     if (is_null($stmt)) {
@@ -35,14 +81,23 @@ function getUserId($name) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
-    return executeAndProcessResult($stmt, null, function ($result) {
+    $userId = executeAndProcessResult($stmt, null, function ($result) {
       return intval(fetchOnlyValue($result));
     });
-  });
+    if ($userId) {
+      return $userId;
+    }
+  }
+  return 0;
 }
 
 function getUserInfoByName($name) {
-  return connectAndRun(null, function ($link) use ($name) {
+  foreach (getAllDbsForUsers() as $dbInfo) {
+    $link = connect($dbInfo);
+
+    if (!$link) {
+      return null;
+    }
     $stmt = prepareQuery($link, 'SELECT * FROM users WHERE name=?');
 
     if (is_null($stmt)) {
@@ -52,61 +107,78 @@ function getUserInfoByName($name) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
-    return executeAndProcessResult($stmt, null, function ($result) {
+    $userInfo = executeAndProcessResult($stmt, null, function ($result) {
       return mysqli_fetch_assoc($result);
     });
-  });
+
+    if ($userInfo) {
+      return $userInfo;
+    }
+  }
+  return null;
 }
 
 function getUserNameById($id) {
-  return connectAndRun(null, function ($link) use ($id) {
-    $stmt = prepareQuery($link, 'SELECT name FROM users WHERE id=?');
+  $dbInfo = getDbForUsers($id);
+  $link = $dbInfo ? connect($dbInfo) : null;
 
-    if (is_null($stmt)) {
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return null;
-    }
-    return executeAndProcessResult($stmt, null, function ($result) {
-      return fetchOnlyValue($result);
-    });
+  if (!$link) {
+    return null;
+  }
+  $stmt = prepareQuery($link, 'SELECT name FROM users WHERE id=?');
+
+  if (is_null($stmt)) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  return executeAndProcessResult($stmt, null, function ($result) {
+    return fetchOnlyValue($result);
   });
 }
 
 function getUserRoleById($id) {
-  return connectAndRun(null, function ($link) use ($id) {
-    $stmt = prepareQuery($link, 'SELECT role FROM users WHERE id=?');
+  $dbInfo = getDbForUsers($id);
+  $link = $dbInfo ? connect($dbInfo) : null;
 
-    if (is_null($stmt)) {
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return null;
-    }
-    return executeAndProcessResult($stmt, null, function ($result) {
-      $value = fetchOnlyValue($result);
-      return is_null($value) ? null : intval($value);
-    });
+  if (!$link) {
+    return null;
+  }
+  $stmt = prepareQuery($link, 'SELECT role FROM users WHERE id=?');
+
+  if (is_null($stmt)) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  return executeAndProcessResult($stmt, null, function ($result) {
+    $value = fetchOnlyValue($result);
+    return is_null($value) ? null : intval($value);
   });
 }
 
 function getUserInfoById($id) {
-  return connectAndRun(null, function ($link) use ($id) {
-    $stmt = prepareQuery($link, 'SELECT * FROM users WHERE id=?');
+  $dbInfo = getDbForUsers($id);
+  $link = $dbInfo ? connect($dbInfo) : null;
 
-    if (is_null($stmt)) {
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return null;
-    }
-    return executeAndProcessResult($stmt, null, function ($result) {
-      return mysqli_fetch_assoc($result);
-    });
+  if (!$link) {
+    return null;
+  }
+  $stmt = prepareQuery($link, 'SELECT * FROM users WHERE id=?');
+
+  if (is_null($stmt)) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  return executeAndProcessResult($stmt, null, function ($result) {
+    return mysqli_fetch_assoc($result);
   });
 }
 
@@ -117,37 +189,51 @@ function getUserInfoById($id) {
  * null - error
  */
 function cancelOrder($orderId, $customerId) {
-  return connectAndRun(null, function ($link) use ($orderId, $customerId) {
-    if (!beginTransaction($link)) {
-      return null;
-    }
-    $stmt = prepareQuery($link, 'DELETE FROM waiting_orders WHERE order_id=? AND customer_id=?');
+  $dbInfo = getDbForWaitingOrders($customerId);
+  $link = $dbInfo ? connect($dbInfo) : null;
 
-    if (is_null($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!executeStatement($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    if (mysqli_stmt_affected_rows($stmt) === 0) {
-      return false;
-    }
-    if (!addChangeToLog($link, $customerId, $orderId)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    return commitTransaction($link) ? true : null;
-  });
+  if (!$link || !beginTransaction($link)) {
+    return null;
+  }
+  $result = doCancelOrder($link, $orderId, $customerId);
+
+  if (is_null($result)) {
+    rollbackTransaction($link);
+    return null;
+  }
+  if ($result && !addChangeToLog($customerId, $orderId)) {
+    rollbackTransaction($link);
+    return null;
+  }
+  return commitTransaction($link) ? true : null;
 }
 
-function addChangeToLog($link, $customerId, $orderId) {
+function doCancelOrder($link, $orderId, $customerId) {
+  $stmt = prepareQuery($link, 'DELETE FROM waiting_orders WHERE order_id=? AND customer_id=?');
+
+  if (is_null($stmt)) {
+    rollbackTransaction($link);
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    rollbackTransaction($link);
+    return null;
+  }
+  if (!executeStatement($stmt)) {
+    rollbackTransaction($link);
+    return null;
+  }
+  return mysqli_stmt_affected_rows($stmt) !== 0;
+}
+
+function addChangeToLog($customerId, $orderId) {
+  $dbInfo = getDbForDoneOrCanceledLog($customerId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link) {
+    return false;
+  }
   $stmt = prepareQuery($link, 'INSERT INTO done_or_canceled_log (customer_id, order_id, time) VALUE (?, ?, ?)');
 
   if (is_null($stmt)) {
@@ -166,46 +252,47 @@ function addOrder($customerId, $description, $price) {
   if ($role !== ROLE_CUSTOMER) {
     return null;
   }
-  return connectAndRun(null, function ($link) use ($customerId, $description, $price) {
-    if (!beginTransaction($link)) {
-      return null;
-    }
-    $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (description, price, time, customer_id) VALUES (?, ?, ?, ?);');
+  $dbInfo = getDbForWaitingOrders($customerId);
+  $link = $dbInfo ? connect($dbInfo) : null;
 
-    if (is_null($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    $time = time();
+  if (!$link || !beginTransaction($link)) {
+    return null;
+  }
+  $time = time();
+  $orderId = doAddOrder($link, $customerId, $description, $price, $time);
 
-    if (!mysqli_stmt_bind_param($stmt, 'ssii', $description, $price, $time, $customerId)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!executeStatement($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    $orderId = intval(mysqli_insert_id($link));
+  if (!$orderId) {
+    rollbackTransaction($link);
+    return null;
+  }
+  return commitTransaction($link) ? [
+    'order_id' => $orderId,
+    'customer_id' => $customerId,
+    'description' => $description,
+    'price' => $price,
+    'time' => $time
+  ] : null;
+}
 
-    if ($orderId == 0) {
-      logError('cannot get last inserted id');
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!commitTransaction($link)) {
-      return null;
-    }
+function doAddOrder($link, $customerId, $description, $price, $time) {
+  $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (description, price, time, customer_id) VALUES (?, ?, ?, ?);');
 
-    return [
-      'order_id' => $orderId,
-      'customer_id' => $customerId,
-      'description' => $description,
-      'price' => $price,
-      'time' => $time
-    ];
-  });
+  if (is_null($stmt)) {
+    return 0;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'ssii', $description, $price, $time, $customerId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return 0;
+  }
+  if (!executeStatement($stmt)) {
+    return 0;
+  }
+  $orderId = intval(mysqli_insert_id($link));
+
+  if ($orderId == 0) {
+    logError('cannot get last inserted id');
+  }
+  return $orderId;
 }
 
 /**
@@ -215,99 +302,115 @@ function addOrder($customerId, $description, $price) {
  * null - error
  */
 function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
-  return connectAndRun(null, function ($link) use ($orderId, $customerId, $executorId, $commission) {
-    if (!beginTransaction($link)) {
-      return null;
-    }
-    $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE order_id=? AND customer_id=?');
+  $dbInfo = getDbForWaitingOrders($customerId);
+  $link = $dbInfo ? connect($dbInfo) : null;
 
-    if (is_null($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      rollbackTransaction($link);
-      return null;
-    }
-    $orderInfos = executeAndGetResultAssoc($stmt, null);
-    $orderInfo = $orderInfos ? getIfExists($orderInfos, 0) : null;
+  if (!$link || !beginTransaction($link)) {
+    return null;
+  }
+  $result = doMarkOrderExecuted($link, $orderId, $customerId, $executorId, $commission);
 
-    if (is_null($orderInfo)) {
-      return false;
-    }
-    $price = getIfExists($orderInfo, 'price');
-
-    if (!$price) {
-      logError('incorrect price');
-      return null;
-    }
-    $profit = $price * (1 - $commission);
-    $stmt = prepareQuery($link, 'DELETE FROM waiting_orders WHERE order_id=? AND customer_id=?');
-
-    if (is_null($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!executeStatement($stmt)) {
-      return null;
-    }
-    if (mysqli_stmt_affected_rows($stmt) === 0) {
-      return false;
-    }
-    if (!insertOrderIntoDoneTables($link, $orderInfo, $executorId, $profit)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    $stmt = prepareQuery($link, 'UPDATE users SET balance=balance+? WHERE id=?');
-
-    if (is_null($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 'di', $profit, $executorId)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!executeStatementAndCheckRowsAffected($stmt)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    if (!addChangeToLog($link, $customerId, $orderId)) {
-      rollbackTransaction($link);
-      return null;
-    }
-    return commitTransaction($link) ? true : null;
-  });
+  if (is_null($result)) {
+    rollbackTransaction($link);
+  }
+  return commitTransaction($link) ? $result : null;
 }
 
-function insertOrderIntoDoneTables($link, $orderInfo, $executorId, $profit) {
+function doMarkOrderExecuted($waitingOrdersLink, $orderId, $customerId, $executorId, $commission) {
+  $stmt = prepareQuery($waitingOrdersLink, 'SELECT * FROM waiting_orders WHERE order_id=? AND customer_id=?');
+
+  if (is_null($stmt)) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  $orderInfos = executeAndGetResultAssoc($stmt, null);
+  $orderInfo = $orderInfos ? getIfExists($orderInfos, 0) : null;
+
+  if (!$orderInfo) {
+    return false;
+  }
+  $price = getIfExists($orderInfo, 'price');
+
+  if (!$price) {
+    logError('incorrect price');
+    return null;
+  }
+  $stmt = prepareQuery($waitingOrdersLink, 'DELETE FROM waiting_orders WHERE order_id=? AND customer_id=?');
+
+  if (is_null($stmt)) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  if (!executeStatement($stmt)) {
+    return null;
+  }
+  if (mysqli_stmt_affected_rows($stmt) === 0) {
+    return false;
+  }
+  $profit = $price * (1 - $commission);
+
+  return
+    insertOrderIntoDoneTables($orderInfo, $executorId, $profit) &&
+    giveProfitToUser($executorId, $profit) &&
+    addChangeToLog($customerId, $orderId)
+      ? true : null;
+}
+
+function giveProfitToUser($userId, $profit) {
+  $dbInfo = getDbForUsers($userId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link) {
+    return false;
+  }
+  $stmt = prepareQuery($link, 'UPDATE users SET balance=balance+? WHERE id=?');
+
+  if (is_null($stmt)) {
+    return false;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'di', $profit, $userId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return false;
+  }
+  return executeStatementAndCheckRowsAffected($stmt);
+}
+
+function insertOrderIntoDoneTables($orderInfo, $executorId, $profit) {
+  $orderId = getIfExists($orderInfo, 'order_id');
+  $customerId = getIfExists($orderInfo, 'customer_id');
+  $description = getIfExists($orderInfo, 'description');
+  $time = getIfExists($orderInfo, 'time');
+  $price = getIfExists($orderInfo, 'price');
+
+  if (!$orderId || !$customerId || !$description || !$time || !$price) {
+    logError('cannot get full order info from waiting_orders');
+    return false;
+  }
+  $dbInfo = getDbForDoneOrdersForCustomer($customerId);
+  $doneForCustomerLink = $dbInfo ? connect($dbInfo) : null;
+
+  $dbInfo = getDbForDoneOrdersForExecutor($executorId);
+  $doneForExecutorLink = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$doneForCustomerLink || !$doneForExecutorLink) {
+    return false;
+  }
   $doneTime = time();
 
-  $stmt = prepareQuery($link,
+  $stmt = prepareQuery($doneForCustomerLink,
     'INSERT INTO done_orders_for_customer (order_id, customer_id, description, price, time, executor_id, done_time) ' .
     'VALUES (?, ?, ?, ?, ?, ?, ?)');
 
   if (is_null($stmt)) {
     return false;
   }
-  $id = getIfExists($orderInfo, 'order_id');
-  $customerId = getIfExists($orderInfo, 'customer_id');
-  $description = getIfExists($orderInfo, 'description');
-  $time = getIfExists($orderInfo, 'time');
-  $price = getIfExists($orderInfo, 'price');
-
-  if (!$id || !$customerId || !$description || !$time || !$price) {
-    logError('cannot get full order info from waiting_orders');
-    return false;
-  }
-  if (!mysqli_stmt_bind_param($stmt, 'sssssss', $id, $customerId, $description,
+  if (!mysqli_stmt_bind_param($stmt, 'sssssss', $orderId, $customerId, $description,
     $price, $time, $executorId, $doneTime)
   ) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
@@ -316,15 +419,14 @@ function insertOrderIntoDoneTables($link, $orderInfo, $executorId, $profit) {
   if (!executeStatement($stmt)) {
     return false;
   }
-  $stmt = prepareQuery($link,
+  $stmt = prepareQuery($doneForExecutorLink,
     'INSERT INTO done_orders_for_executor (order_id, customer_id, description, profit, time, executor_id, done_time) ' .
     'VALUES (?, ?, ?, ?, ?, ?, ?)');
 
   if (is_null($stmt)) {
-    rollbackTransaction($link);
     return false;
   }
-  if (!mysqli_stmt_bind_param($stmt, 'sssssss', $id, $customerId, $description,
+  if (!mysqli_stmt_bind_param($stmt, 'sssssss', $orderId, $customerId, $description,
     $profit, $time, $executorId, $doneTime)
   ) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
@@ -334,8 +436,15 @@ function insertOrderIntoDoneTables($link, $orderInfo, $executorId, $profit) {
 }
 
 function getDoneOrCanceledLog($sinceTime) {
-  return connectAndRun(null, function ($link) use ($sinceTime) {
-    $stmt = prepareQuery($link, 'SELECT order_id, customer_id FROM done_or_canceled_log WHERE time >= ?');
+  $arrays = [];
+
+  foreach (getAllDbsForDoneOrCanceledLog() as $dbInfo) {
+    $link = connect($dbInfo);
+
+    if (!$link) {
+      return null;
+    }
+    $stmt = prepareQuery($link, 'SELECT order_id, customer_id, time FROM done_or_canceled_log WHERE time >= ?');
 
     if (is_null($stmt)) {
       return null;
@@ -344,8 +453,51 @@ function getDoneOrCanceledLog($sinceTime) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
       return null;
     }
-    return executeAndGetResultAssoc($stmt, null);
+    $elements = executeAndGetResultAssoc($stmt, null);
+
+    if (is_null($elements)) {
+      return null;
+    }
+    array_push($arrays, $elements);
+  }
+  return mergeSortedArrays($arrays, function($element) {
+    return $element['time'];
   });
+}
+
+function mergeSortedArrays($arrays, $func) {
+  $result = [];
+  $indexes = array_fill(0, sizeof($arrays), 0);
+
+  while (true) {
+    $maxValue = null;
+    $maxElement = null;
+    $maxArrayIndex = null;
+    $i = 0;
+
+    foreach ($arrays as $arr) {
+      $index = $indexes[$i];
+      $element = getIfExists($arr, $index);
+
+      if (!is_null($element)) {
+        $value = $func($element);
+        
+        if (is_null($maxElement) || $value > $maxValue) {
+          $maxElement = $element;
+          $maxValue = $value;
+          $maxArrayIndex = $i;
+        }
+      }
+      $i++;
+    }
+    if (is_null($maxElement)) {
+      break;
+    } else {
+      $indexes[$maxArrayIndex]++;
+      array_push($result, $maxElement);
+    }
+  }
+  return $result;
 }
 
 function getDoneOrdersForExecutor($userId,
@@ -354,7 +506,10 @@ function getDoneOrdersForExecutor($userId,
                                   $count) {
   $params = buildParamsForGetOrders('done_time', $sinceTime, $sinceCustomerId, $sinceOrderId,
     $untilTime, $untilCustomerId, $untilOrderId);
-  return doGetOrders('done_orders_for_executor', 'executor_id = ' . intval($userId), $count, $params);
+  $dbInfo = getDbForDoneOrdersForExecutor($userId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+  return !$link ? null : doGetOrders($link, 'done_orders_for_executor',
+    'executor_id = ' . intval($userId), $count, $params);
 }
 
 function getOrdersForCustomer($userId, $done,
@@ -362,15 +517,35 @@ function getOrdersForCustomer($userId, $done,
                               $count) {
   $timeColumnName = $done ? 'done_time' : 'time';
   $params = buildParamsForGetOrders($timeColumnName, $sinceTime, 0, $sinceOrderId, $untilTime, 0, $untilOrderId);
-  $tableName = $done ? 'done_orders_for_executor' : 'waiting_orders';
-  return doGetOrders($tableName, 'customer_id = ' . intval($userId), $count, $params);
+  $tableName = $done ? 'done_orders_for_customer' : 'waiting_orders';
+  $dbInfo = $done ? getDbForDoneOrdersForCustomer($userId) : getDbForWaitingOrders($userId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+  return !$link ? null : doGetOrders($link, $tableName,
+    'customer_id = ' . intval($userId), $count, $params);
 }
 
 function getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
                           $untilTime, $untilCustomerId, $untilOrderId, $count) {
   $params = buildParamsForGetOrders('time', $sinceTime, $sinceCustomerId, $sinceOrderId,
     $untilTime, $untilCustomerId, $untilOrderId);
-  return doGetOrders('waiting_orders', '', $count, $params);
+  $arrays = [];
+  
+  foreach (getAllDbsForWaitingOrders() as $dbInfo) {
+    $link = connect($dbInfo);
+
+    if (!$link) {
+      return null;
+    }
+    $elements = doGetOrders($link, 'waiting_orders', '', $count, $params);
+
+    if (is_null($elements)) {
+      return null;
+    }
+    array_push($arrays, $elements);
+  }
+  return mergeSortedArrays($arrays, function ($element) {
+    return $element['time'];
+  });
 }
 
 function buildParamsForGetOrders($timeColumnName,
@@ -399,9 +574,9 @@ function buildSinceCondition($params) {
   $sinceCustomerId = intval(getIfExists($params, 'since_customer_id'));
 
   if ($sinceCustomerId == 0 && $sinceOrderId == 0) {
-    return $timeColumnName.' >= ' . $sinceTime;
+    return $timeColumnName . ' >= ' . $sinceTime;
   } else {
-    $condition = $timeColumnName.' > ' . $sinceTime . ' OR '.$timeColumnName.' = ' . $sinceTime . ' AND ';
+    $condition = $timeColumnName . ' > ' . $sinceTime . ' OR ' . $timeColumnName . ' = ' . $sinceTime . ' AND ';
 
     if ($sinceCustomerId > 0) {
       $condition .= '(customer_id > ' . $sinceCustomerId . ' OR customer_id = ' . $sinceCustomerId .
@@ -424,9 +599,9 @@ function buildUntilCondition($params) {
   $untilCustomerId = intval(getIfExists($params, 'until_customer_id'));
 
   if ($untilCustomerId == 0 && $untilOrderId == 0) {
-    return $timeColumnName.' <= ' . $untilTime;
+    return $timeColumnName . ' <= ' . $untilTime;
   } else {
-    $condition = $timeColumnName.' < ' . $untilTime . ' OR ' . $timeColumnName . ' = ' . $untilTime . ' AND ';
+    $condition = $timeColumnName . ' < ' . $untilTime . ' OR ' . $timeColumnName . ' = ' . $untilTime . ' AND ';
 
     if ($untilCustomerId > 0) {
       $condition .= '(customer_id < ' . $untilCustomerId . ' OR customer_id = ' . $untilCustomerId .
@@ -438,49 +613,46 @@ function buildUntilCondition($params) {
   }
 }
 
-function doGetOrders($tableName, $additionalCondition, $count, $params) {
-  return connectAndRun(null, function ($link)
-  use ($tableName, $additionalCondition, $params, $count) {
-    $condition = $additionalCondition;
-    $timeColumnName = getIfExists($params, 'time_column_name');
+function doGetOrders($link, $tableName, $additionalCondition, $count, $params) {
+  $condition = $additionalCondition;
+  $timeColumnName = getIfExists($params, 'time_column_name');
 
-    if (!$timeColumnName) {
-      $timeColumnName = 'time';
-    }
-    $sinceCondition = buildSinceCondition($params);
+  if (!$timeColumnName) {
+    $timeColumnName = 'time';
+  }
+  $sinceCondition = buildSinceCondition($params);
 
-    if ($sinceCondition) {
-      if ($condition != '') {
-        $condition .= ' AND ';
-      }
-      $condition .= '(' . $sinceCondition . ')';
-    }
-    $untilCondition = buildUntilCondition($params);
-
-    if ($untilCondition) {
-      if ($condition != '') {
-        $condition .= ' AND ';
-      }
-      $condition .= '(' . $untilCondition . ')';
-    }
-    $query = 'SELECT * FROM' . ' ' . $tableName;
-
+  if ($sinceCondition) {
     if ($condition != '') {
-      $query .= ' WHERE ' . $condition;
+      $condition .= ' AND ';
     }
-    $query .= ' ORDER BY ' . $timeColumnName . ' DESC, customer_id DESC, order_id DESC LIMIT ?';
+    $condition .= '(' . $sinceCondition . ')';
+  }
+  $untilCondition = buildUntilCondition($params);
 
-    $stmt = prepareQuery($link, $query);
+  if ($untilCondition) {
+    if ($condition != '') {
+      $condition .= ' AND ';
+    }
+    $condition .= '(' . $untilCondition . ')';
+  }
+  $query = 'SELECT * FROM' . ' ' . $tableName;
 
-    if (is_null($stmt)) {
-      return null;
-    }
-    if (!mysqli_stmt_bind_param($stmt, 'i', $count)) {
-      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return null;
-    }
-    return executeAndGetResultAssoc($stmt, null);
-  });
+  if ($condition != '') {
+    $query .= ' WHERE ' . $condition;
+  }
+  $query .= ' ORDER BY ' . $timeColumnName . ' DESC, customer_id DESC, order_id DESC LIMIT ?';
+
+  $stmt = prepareQuery($link, $query);
+
+  if (is_null($stmt)) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'i', $count)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  return executeAndGetResultAssoc($stmt, null);
 }
 
 function fetchOnlyValue($result) {
@@ -516,16 +688,34 @@ function executeAndProcessResult($stmt, $errorValue, $func) {
   return $value;
 }
 
-function connectAndRun($errorValue, $func) {
-  $link = mysqli_connect('', 'root', '', 'main');
+function connect($dbInfo) {
+  $host = getIfExists($dbInfo, 'host');
+  $database = getIfExists($dbInfo, 'database');
+
+  if (is_null($host) || is_null($database)) {
+    logError('incorrect db info');
+    return null;
+  }
+  $port = getIfExists($dbInfo, 'port');
+
+  if (!$port) {
+    $port = '';
+  }
+  $key = $host . '||' . $database;
+  global $hostAndDb2link;
+  $link = getIfExists($hostAndDb2link, $key);
 
   if (!$link) {
-    logError('cannot connect to database');
-    return $errorValue;
+    logInfo("DATABASE: " . $database);
+    $link = mysqli_connect($host, 'root', '', $database);
+
+    if (!$link) {
+      logError('cannot connect to database ' . $host . ': '.$database);
+      return null;
+    }
+    $hostAndDb2link[$key] = $link;
   }
-  $result = $func($link);
-  mysqli_close($link);
-  return $result;
+  return $link;
 }
 
 function prepareQuery($link, $query) {
@@ -589,3 +779,11 @@ function logMysqlStmtError($prefix, $stmt) {
 function logMysqlError($prefix, $link) {
   logError($prefix . ': ' . mysqli_error($link));
 }
+
+register_shutdown_function(function () {
+  global $hostAndDb2link;
+
+  foreach ($hostAndDb2link as $link) {
+    mysqli_close($link);
+  }
+});

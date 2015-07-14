@@ -1,5 +1,5 @@
 CREATE TABLE users (
-  id       INT UNSIGNED            NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  id       INT UNSIGNED            NOT NULL PRIMARY KEY,
   name     VARCHAR(20)             NOT NULL UNIQUE,
   password CHAR(60)                NOT NULL,
   role     TINYINT UNSIGNED        NOT NULL,
@@ -8,8 +8,16 @@ CREATE TABLE users (
   CHARACTER SET = utf8
   ENGINE = InnoDB;
 
+CREATE TABLE sequences (
+  user_id INT UNSIGNED NOT NULL DEFAULT 0
+)
+  CHARACTER SET = utf8,
+  ENGINE = InnoDB;
+
+INSERT INTO sequences VALUES ();
+
 CREATE TABLE waiting_orders (
-  order_id          INT UNSIGNED            NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  order_id    INT UNSIGNED            NOT NULL AUTO_INCREMENT PRIMARY KEY,
   customer_id INT UNSIGNED            NOT NULL,
   description VARCHAR(200)            NOT NULL,
   price       DECIMAL(10, 2) UNSIGNED NOT NULL,
@@ -23,7 +31,7 @@ CREATE TABLE waiting_orders (
   ENGINE = InnoDB;
 
 CREATE TABLE done_orders_for_customer (
-  order_id          INT UNSIGNED            NOT NULL,
+  order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
   description VARCHAR(200)            NOT NULL,
   price       DECIMAL(10, 2) UNSIGNED NOT NULL,
@@ -38,7 +46,7 @@ CREATE TABLE done_orders_for_customer (
   ENGINE = InnoDB;
 
 CREATE TABLE done_orders_for_executor (
-  order_id          INT UNSIGNED            NOT NULL,
+  order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
   description VARCHAR(200)            NOT NULL,
   profit      DECIMAL(10, 2) UNSIGNED NOT NULL,
@@ -53,9 +61,9 @@ CREATE TABLE done_orders_for_executor (
   ENGINE = InnoDB;
 
 CREATE TABLE done_or_canceled_log (
-  order_id    INT UNSIGNED     NOT NULL,
-  customer_id INT UNSIGNED     NOT NULL,
-  time        BIGINT UNSIGNED     NOT NULL,
+  order_id    INT UNSIGNED    NOT NULL,
+  customer_id INT UNSIGNED    NOT NULL,
+  time        BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (order_id, customer_id),
   INDEX (time)
 )

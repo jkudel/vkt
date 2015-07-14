@@ -1,8 +1,10 @@
 <?php
-require_once('util.php');
-require_once('ajax_util.php');
 require_once('messages.php');
+require_once('util.php');
+require_once('config.php');
+require_once('ajax_util.php');
 require_once('sessions.php');
+require_once('shards.php');
 require_once('database.php');
 
 const COMMISSION = 0.1;

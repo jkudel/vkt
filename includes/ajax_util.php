@@ -1,6 +1,4 @@
 <?php
-require_once('util.php');
-
 const ERROR_VALIDATION = 0;
 const ERROR_INTERNAL = 1;
 const NOT_AUTH_ERROR = 2;
