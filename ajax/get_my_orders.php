@@ -22,7 +22,13 @@ $count = intval(getIfExists($_GET, 'count'));
 if (!$count) {
   $count = 1;
 }
-$role = $userId ? \storage\getUserRoleById($userId) : 0;
+$userInfo = $userId ? \storage\getUserInfoById($userId) : null;
+
+if (!$userInfo) {
+  internalErrorResponse();
+  return;
+}
+$role = getIfExists($userInfo, 'role');
 
 if ($role === ROLE_EXECUTOR) {
   $orders = \storage\getDoneOrdersForExecutor(
@@ -67,7 +73,8 @@ foreach ($orders as $order) {
   }
   if ($role === ROLE_CUSTOMER) {
     $executorId = getIfExists($order, 'executor_id');
-    $executorName = is_null($executorId) ? null : \storage\getUserNameById($executorId);
+    $executorInfo = $executorId ? \storage\getUserInfoById($executorId) : null;
+    $executorName = $executorInfo ? getIfExists($executorInfo, 'name') : null;
 
     if (!is_null($executorName)) {
       $element['executor'] = $executorName;

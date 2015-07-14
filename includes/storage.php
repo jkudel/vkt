@@ -35,14 +35,14 @@ function insertUser($userId, $userName, $passwordHash, $role) {
 /*
  * Returns 0 if user not found, and NULL if error occurred
  */
-function getUserId($name) {
+function getUserIdByName($name) {
   foreach (getAllDbsForUsers() as $dbInfo) {
     $link = connect($dbInfo);
 
     if (!$link) {
       return null;
     }
-    $userId = \database\getUserId($link, $name);
+    $userId = \database\getUserIdByName($link, $name);
 
     if (is_null($userId)) {
       return null;
@@ -68,26 +68,6 @@ function getUserInfoByName($name) {
     }
   }
   return null;
-}
-
-function getUserNameById($id) {
-  $dbInfo = getDbForUsers($id);
-  $link = $dbInfo ? connect($dbInfo) : null;
-
-  if (!$link) {
-    return null;
-  }
-  return \database\getUserNameById($link, $id);
-}
-
-function getUserRoleById($id) {
-  $dbInfo = getDbForUsers($id);
-  $link = $dbInfo ? connect($dbInfo) : null;
-
-  if (!$link) {
-    return null;
-  }
-  return \database\getUserRoleById($link, $id);
 }
 
 function getUserInfoById($id) {
@@ -137,9 +117,9 @@ function addToChangeLog($customerId, $orderId) {
 }
 
 function addOrder($customerId, $description, $price) {
-  $role = getUserRoleById($customerId);
+  $userInfo = getUserInfoById($customerId);
 
-  if ($role !== ROLE_CUSTOMER) {
+  if (!$userInfo || getIfExists($userInfo, 'role') !== ROLE_CUSTOMER) {
     return null;
   }
   $dbInfo = getDbForWaitingOrders($customerId);

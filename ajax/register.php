@@ -43,7 +43,7 @@ if ($intRole != $role || $intRole < 0 || $intRole > 1) {
   validationErrorResponse(msg('invalid.value'), 'role');
   return;
 }
-$userId = \storage\getUserId($userName);
+$userId = \storage\getUserIdByName($userName);
 
 if (is_null($userId)) {
   internalErrorResponse();

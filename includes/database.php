@@ -34,7 +34,7 @@ function getNextUserId($link) {
   return $value;
 }
 
-function getUserId($link, $name) {
+function getUserIdByName($link, $name) {
   $stmt = prepareQuery($link, 'SELECT id FROM users WHERE name=?');
 
   if (is_null($stmt)) {
@@ -61,38 +61,6 @@ function getUserInfoByName($link, $name) {
   }
   return executeAndProcessResult($stmt, null, function ($result) {
     return mysqli_fetch_assoc($result);
-  });
-}
-
-function getUserNameById($link, $id) {
-  $stmt = prepareQuery($link, 'SELECT name FROM users WHERE id=?');
-
-  if (is_null($stmt)) {
-    return null;
-  }
-  if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
-    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
-  }
-  return executeAndProcessResult($stmt, null, function ($result) {
-    $value = fetchOnlyValue($result);
-    return $value ? $value : false;
-  });
-}
-
-function getUserRoleById($link, $id) {
-  $stmt = prepareQuery($link, 'SELECT role FROM users WHERE id=?');
-
-  if (is_null($stmt)) {
-    return null;
-  }
-  if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
-    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
-  }
-  return executeAndProcessResult($stmt, null, function ($result) {
-    $value = fetchOnlyValue($result);
-    return is_null($value) ? null : intval($value);
   });
 }
 
