@@ -43,7 +43,7 @@ if ($intRole != $role || $intRole < 0 || $intRole > 1) {
   validationErrorResponse(msg('invalid.value'), 'role');
   return;
 }
-$userId = \database\getUserId($userName);
+$userId = \storage\getUserId($userName);
 
 if (is_null($userId)) {
   internalErrorResponse();
@@ -53,7 +53,7 @@ if ($userId != 0) {
   validationErrorResponse(msg('username.conflict.error'), 'user-name');
   return;
 }
-$newUserId = \database\addUser($userName, password_hash($password, PASSWORD_BCRYPT), $role);
+$newUserId = \storage\addUser($userName, password_hash($password, PASSWORD_BCRYPT), $role);
 
 if ($newUserId == 0) {
   logError('cannot add new user into db');

@@ -23,7 +23,7 @@ if (strlen($userName) > 20 || strlen($password) > 20) {
   validationErrorResponse(msg('auth.failed.error'));
   return;
 }
-$userInfo = \database\getUserInfoByName($userName);
+$userInfo = \storage\getUserInfoByName($userName);
 
 if (is_null($userInfo) ||
   !array_key_exists('password', $userInfo) ||

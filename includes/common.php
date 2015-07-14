@@ -6,6 +6,7 @@ require_once('ajax_util.php');
 require_once('sessions.php');
 require_once('shards.php');
 require_once('database.php');
+require_once('storage.php');
 
 const COMMISSION = 0.1;
 

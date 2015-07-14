@@ -19,7 +19,7 @@ if ($price < 1) {
   validationErrorResponse(msg('min.price.error') . ' 1 ' . msg('currency'));
   return;
 }
-$orderFromDb = \database\addOrder($userId, $description, $price);
+$orderFromDb = \storage\addOrder($userId, $description, $price);
 
 if (is_null($orderFromDb)) {
   internalErrorResponse();

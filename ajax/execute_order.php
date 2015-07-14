@@ -13,7 +13,7 @@ if (!$parsedOrderId) {
   validationErrorResponse(msg('incorrect.order.id'));
   return;
 }
-$result = \database\markOrderExecuted(
+$result = \storage\markOrderExecuted(
   $parsedOrderId['order_id'], $parsedOrderId['customer_id'], $userId, getCommonConstant('commission'));
 
 if ($result === false) {

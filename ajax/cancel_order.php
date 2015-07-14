@@ -13,7 +13,7 @@ if (!$parsedOrderId) {
   validationErrorResponse(msg('incorrect.order.id'));
   return;
 }
-$result = \database\cancelOrder($parsedOrderId['order_id'], $userId);
+$result = \storage\cancelOrder($parsedOrderId['order_id'], $userId);
 
 if ($result === false) {
   noObjectErrorResponse();

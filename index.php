@@ -4,7 +4,7 @@ require_once 'includes/common.php';
 $userId = \sessions\getCurrentUserId();
 
 if (!is_null($userId)) {
-  $userInfo = \database\getUserInfoById($userId);
+  $userInfo = \storage\getUserInfoById($userId);
 
   if (is_null($userInfo)) {
     \sessions\logout();

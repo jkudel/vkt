@@ -13,7 +13,7 @@ $parsedSinceOrderId = getParsedOrderId($_GET, 'since_order_id');
 $sinceCustomerId = $parsedSinceOrderId ? $parsedSinceOrderId['customer_id'] : 0;
 $sinceOrderId = $parsedSinceOrderId ? $parsedSinceOrderId['order_id'] : 0;
 
-$orders = \database\getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId, 0, 0, 0, MAX_CHECK_COUNT + 1);
+$orders = \storage\getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId, 0, 0, 0, MAX_CHECK_COUNT + 1);
 
 if (is_null($orders)) {
   internalErrorResponse();
@@ -21,7 +21,7 @@ if (is_null($orders)) {
 }
 $newOrdersCount = min(MAX_CHECK_COUNT, sizeof($orders));
 $newOrdersHasMore = sizeof($orders) > MAX_CHECK_COUNT;
-$log = \database\getDoneOrCanceledLog($sinceTime);
+$log = \storage\getDoneOrCanceledLog($sinceTime);
 
 if (is_null($log)) {
   internalErrorResponse();
