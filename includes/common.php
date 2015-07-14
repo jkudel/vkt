@@ -9,6 +9,13 @@ require_once('database.php');
 
 const COMMISSION = 0.1;
 
+const COMMON_CONSTANTS = [
+  'commission' => 0.1,
+  'user.name.max.length' => 20,
+  'password.min.length' => 4,
+  'password.max.length' => 20
+];
+
 const ROLE_EXECUTOR = 0;
 const ROLE_CUSTOMER = 1;
 $allRoleNames = [msg('executor'), msg('customer')];
@@ -35,4 +42,14 @@ function getCompositeOrderId($order) {
 function getParsedOrderId($arr, $key) {
   $value = getIfExists($arr, $key);
   return $value ? parseCompositeOrderId($value) : null;
+}
+
+function getCommonConstant($key) {
+  $value = getIfExists(COMMON_CONSTANTS, $key);
+
+  if (is_null($value)) {
+    logError('cannot find constant "' . $key . '"');
+    exit;
+  }
+  return $value;
 }

@@ -38,7 +38,7 @@ function loadNewWaitingOrders() {
 function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
   ajaxExecuteOrder(orderId, function () {
     var balanceElement = $('#balance');
-    var delta = (parseFloat(price) * (1 - getCommission()));
+    var delta = (parseFloat(price) * (1 - getCommonConstant('commission')));
     var newBalance = parseFloat(balanceElement.text()) + delta;
     balanceElement.text(newBalance.toFixed(2));
     removeOrderBlock(orderBlock, orderId);

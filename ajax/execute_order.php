@@ -14,7 +14,7 @@ if (!$parsedOrderId) {
   return;
 }
 $result = \database\markOrderExecuted(
-  $parsedOrderId['order_id'], $parsedOrderId['customer_id'], $userId, COMMISSION);
+  $parsedOrderId['order_id'], $parsedOrderId['customer_id'], $userId, getCommonConstant('commission'));
 
 if ($result === false) {
   noObjectErrorResponse();

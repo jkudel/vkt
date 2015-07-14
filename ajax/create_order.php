@@ -16,7 +16,7 @@ if ($description == '') {
 $price = floatval(getIfExists($_POST, 'price'));
 
 if ($price < 1) {
-  validationErrorResponse(msg('min.price'));
+  validationErrorResponse(msg('min.price.error') . ' 1 ' . msg('currency'));
   return;
 }
 $orderFromDb = \database\addOrder($userId, $description, $price);

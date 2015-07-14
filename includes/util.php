@@ -58,3 +58,14 @@ function msg($key, ...$params) {
   }, array_keys($params));
   return str_replace($patterns, $params, $format);
 }
+
+function printJsArrayContent($array) {
+  $i = 0;
+  foreach ($array as $key => $value) {
+    if ($i > 0) {
+      echo ',';
+    }
+    echo '"' . $key . '":"' . $value . '"';
+    $i++;
+  }
+}

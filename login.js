@@ -23,12 +23,13 @@ function validateRegisterForm() {
   var repeatPassword = $('#register-repeat-password');
   var result = true;
   var userVal = userName.val();
+  var userNameMaxLength = getCommonConstant('user.name.max.length');
 
   if (!userVal) {
     userName.next('span').text(msg('no.username.error'));
     result = false;
-  } else if (userVal.length > 20) {
-    password.next('span').text(msg('user.name.length.error', 20));
+  } else if (userVal.length > userNameMaxLength) {
+    userName.next('span').text(msg('user.name.length.error', userNameMaxLength));
     result = false;
   }  else if (!userVal.match(/^\w+$/)) {
     userName.next('span').text(msg('invalid.char.in.username.error'));
@@ -38,12 +39,14 @@ function validateRegisterForm() {
   }
   var validateRepeatPassword = false;
   var passwordVal = password.val();
+  var passwordMinLength = getCommonConstant('password.min.length');
+  var passwordMaxLength = getCommonConstant('password.max.length');
 
   if (!passwordVal) {
     password.next('span').text(msg('no.password.error'));
     result = false;
-  } else if (passwordVal.length < 4 || passwordVal.length > 20) {
-    password.next('span').text(msg('password.length.error', 4, 20));
+  } else if (passwordVal.length < passwordMinLength || passwordVal.length > passwordMaxLength) {
+    password.next('span').text(msg('password.length.error', passwordMinLength, passwordMaxLength));
     result = false;
   } else {
     password.next('span').text('');

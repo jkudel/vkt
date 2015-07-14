@@ -10,8 +10,10 @@ if (!is_string($userName) || strlen($userName) == 0) {
   validationErrorResponse(msg('no.username.error'), 'user-name');
   return;
 }
-if (strlen($userName) > 20) {
-  validationErrorResponse(msg('user.name.length.error', 20), 'user-name');
+$userNameMaxLength = getCommonConstant('user.name.max.length');
+
+if (strlen($userName) > $userNameMaxLength) {
+  validationErrorResponse(msg('user.name.length.error', $userNameMaxLength), 'user-name');
   return;
 }
 $userName = strtolower($userName);
@@ -24,8 +26,11 @@ if (!is_string($password) || strlen($password) == 0) {
   validationErrorResponse(msg('no.password.error'), 'password');
   return;
 }
-if (strlen($password) < 4 || strlen($password) > 20) {
-  validationErrorResponse(msg('password.length.error', 4, 20), 'password');
+$passwordMinLength = getCommonConstant('password.min.length');
+$passwordMaxLength = getCommonConstant('password.max.length');
+
+if (strlen($password) < $passwordMinLength || strlen($password) > $passwordMaxLength) {
+  validationErrorResponse(msg('password.length.error', $passwordMinLength, $passwordMaxLength), 'password');
   return;
 }
 if ($repeatPassword !== $password) {

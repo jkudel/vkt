@@ -10,8 +10,8 @@ function msg() {
   });
 }
 
-function getCommission() {
-  return commission;
+function getCommonConstant(key) {
+  return commonConstants[key];
 }
 
 function getUrlParameters() {
