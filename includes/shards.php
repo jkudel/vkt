@@ -45,6 +45,15 @@ function getAllDbsForUsers() {
   return getShardsByTableName('users');
 }
 
+function getAllDbsForSessions() {
+  return getShardsByTableName('sessions');
+}
+
+function getDbForSessions($sessionId) {
+  $key = hexdec(substr(md5($sessionId), 0, 3));
+  return chooseShard(getAllDbsForSessions(), $key);
+}
+
 function getDbForSequences() {
   $shards = getShardsByTableName('sequences');
   return $shards ? getIfExists($shards, 0) : null;

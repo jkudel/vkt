@@ -19,14 +19,14 @@ function insertUser($link, $userId, $userName, $passwordHash, $role) {
 function getNextUserId($link) {
   if (!mysqli_query($link, 'UPDATE sequences SET user_id = user_id + 1')) {
     logMysqlError('cannot execute query', $link);
-    \database\rollbackTransaction($link);
+    rollbackTransaction($link);
     return 0;
   }
   $result = mysqli_query($link, 'SELECT user_id FROM sequences');
 
   if (!$result) {
     logMysqlError('cannot execute query', $link);
-    \database\rollbackTransaction($link);
+    rollbackTransaction($link);
     return 0;
   }
   $value = intval(fetchOnlyValue($result));
@@ -83,16 +83,16 @@ function cancelOrder($link, $orderId, $customerId) {
   $stmt = prepareQuery($link, 'DELETE FROM waiting_orders WHERE order_id=? AND customer_id=?');
 
   if (is_null($stmt)) {
-    \database\rollbackTransaction($link);
+    rollbackTransaction($link);
     return null;
   }
   if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    \database\rollbackTransaction($link);
+    rollbackTransaction($link);
     return null;
   }
   if (!executeStatement($stmt)) {
-    \database\rollbackTransaction($link);
+    rollbackTransaction($link);
     return null;
   }
   return mysqli_stmt_affected_rows($stmt) !== 0;
@@ -251,6 +251,97 @@ function selectOrders($link, $tableName, $timeColumnName, $count, $condition) {
     return null;
   }
   return executeAndGetResultAssoc($stmt, null);
+}
+
+function readSession($link, $sessionId) {
+  $stmt = prepareQuery($link, 'SELECT data FROM sessions WHERE id = ?');
+
+  if (!$stmt) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 's', $sessionId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  $sessionData = executeAndProcessResult($stmt, null, function ($result) {
+    $value = fetchOnlyValue($result);
+    return is_null($value) ? false : $value;
+  });
+
+  if (is_null($sessionData)) {
+    return null;
+  }
+  $time = time();
+
+  if ($sessionData !== false) {
+    $stmt = prepareQuery($link, 'UPDATE sessions SET touch_time = ? WHERE id = ?');
+
+    if (!$stmt) {
+      return null;
+    }
+    if (!mysqli_stmt_bind_param($stmt, 'is', $time, $sessionId)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      return null;
+    }
+    if (!executeStatement($stmt)) {
+      return null;
+    }
+    return html_entity_decode($sessionData);
+  } else {
+    $stmt = prepareQuery($link, 'INSERT INTO sessions (id, touch_time, data) VALUES (?, ?, "")');
+
+    if (!$stmt) {
+      return null;
+    }
+    if (!mysqli_stmt_bind_param($stmt, 'si', $sessionId, $time)) {
+      logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+      return null;
+    }
+    return executeStatement($stmt) ? '' : null;
+  }
+}
+
+function writeSession($link, $sessionId, $data) {
+  $stmt = prepareQuery($link, 'UPDATE sessions SET touch_time = ?, data = ? WHERE id = ?');
+
+  if (!$stmt) {
+    return false;
+  }
+  $time = time();
+
+  if (!mysqli_stmt_bind_param($stmt, 'iss', $time, htmlentities($data, ENT_QUOTES), $sessionId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return false;
+  }
+  return executeStatement($stmt);
+}
+
+function destroySession($link, $sessionId) {
+  $stmt = prepareQuery($link, 'DELETE FROM sessions WHERE id = ?');
+
+  if (!$stmt) {
+    return false;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 's', $sessionId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return false;
+  }
+  return executeStatement($stmt);
+}
+
+function deleteExpiredSessions($link, $maxLifeTime) {
+  $stmt = prepareQuery($link, 'DELETE FROM sessions WHERE touch_time + ? < ?');
+
+  if (!$stmt) {
+    return false;
+  }
+  $time = time();
+
+  if (!mysqli_stmt_bind_param($stmt, 'ii', $maxLifeTime, $time)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return false;
+  }
+  return executeStatement($stmt);
 }
 
 function connect($host, $port, $database) {

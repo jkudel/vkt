@@ -69,3 +69,11 @@ CREATE TABLE done_or_canceled_log (
 )
   CHARACTER SET = utf8
   ENGINE = InnoDB;
+
+CREATE TABLE sessions (
+  id         VARCHAR(255) NOT NULL PRIMARY KEY,
+  touch_time BIGINT       NOT NULL,
+  data       TEXT         NOT NULL
+)
+  CHARACTER SET utf8
+  ENGINE = InnoDB;

@@ -18,13 +18,28 @@ function logMessage($message, $trace, $level) {
 
   foreach ($trace as $traceElement) {
     if (sizeof($trace) == 1 || $i > 0) {
-      $absolutePath = $traceElement['file'];
-      $file = getRelativePath($_SERVER['DOCUMENT_ROOT'], $absolutePath);
+      $absolutePath = getIfExists($traceElement, 'file');
 
-      if (is_null($file)) {
-        $file = $absolutePath;
+      if (is_null($absolutePath)) {
+        $file = 'unknown';
+      } else {
+        $file = getRelativePath($_SERVER['DOCUMENT_ROOT'], $absolutePath);
+
+        if (is_null($file)) {
+          $file = $absolutePath;
+        }
       }
-      $traceStr .= "\n    " . $file . ':' . $traceElement['line'] . ' ' . $traceElement['function'];
+      $line = getIfExists($traceElement, 'line');
+
+      if (is_null($line)) {
+        $line = 'unknown';
+      }
+      $function = getIfExists($traceElement, 'function');
+
+      if (is_null($function)) {
+        $function = 'unknown';
+      }
+      $traceStr .= "\n    " . $file . ':' . $line . ' ' . $function;
     }
     $i++;
   }

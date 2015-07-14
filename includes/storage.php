@@ -29,7 +29,7 @@ function insertUser($userId, $userName, $passwordHash, $role) {
   if (!$link) {
     return false;
   }
-  return insertUser($link, $userId, $userName, $passwordHash, $role);
+  return \database\insertUser($link, $userId, $userName, $passwordHash, $role);
 }
 
 /*
@@ -416,6 +416,47 @@ function doGetOrders($link, $tableName, $additionalCondition, $count, $params) {
   return \database\selectOrders($link, $tableName, $timeColumnName, $count, $condition);
 }
 
+function readSession($sessionId) {
+  $dbInfo = getDbForSessions($sessionId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link) {
+    return null;
+  }
+  return \database\readSession($link, $sessionId);
+}
+
+function writeSession($sessionId, $data) {
+  $dbInfo = getDbForSessions($sessionId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link) {
+    return false;
+  }
+  return \database\writeSession($link, $sessionId, $data);
+}
+
+function destroySession($sessionId) {
+  $dbInfo = getDbForSessions($sessionId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+
+  if (!$link) {
+    return false;
+  }
+  return \database\destroySession($link, $sessionId);
+}
+
+function deleteExpiredSessions($maxLifeTime) {
+  foreach (getAllDbsForSessions() as $dbInfo) {
+    $link = $dbInfo ? connect($dbInfo) : null;
+
+    if (!$link || !\database\deleteExpiredSessions($link, $maxLifeTime)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function connect($dbInfo) {
   $host = getIfExists($dbInfo, 'host');
   $database = getIfExists($dbInfo, 'database');
@@ -434,7 +475,6 @@ function connect($dbInfo) {
   $link = getIfExists($hostAndDb2link, $key);
 
   if (!$link) {
-    logInfo("DATABASE: " . $database);
     $link = \database\connect($host, $port, $database);
 
     if (!$link) {
@@ -447,6 +487,7 @@ function connect($dbInfo) {
 }
 
 register_shutdown_function(function () {
+  session_write_close();
   global $hostAndDb2link;
 
   foreach ($hostAndDb2link as $link) {
