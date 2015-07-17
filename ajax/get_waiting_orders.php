@@ -1,6 +1,12 @@
 <?php
 require_once('../includes/common.php');
 
+$userId = \sessions\getCurrentUserId();
+
+if (is_null($userId)) {
+  notAuthErrorResponse();
+  return;
+}
 $sinceTime = intval(getIfExists($_GET, 'since_time'));
 $sinceParsedOrderId = getParsedOrderId($_GET, 'since_order_id');
 $sinceCustomerId = $sinceParsedOrderId ? $sinceParsedOrderId['customer_id'] : 0;
@@ -17,6 +23,7 @@ if (!$count) {
   $count = 1;
 }
 $orders = \cache\getWaitingOrders(
+  $userId,
   $sinceTime, $sinceCustomerId, $sinceOrderId,
   $untilTime, $untilCustomerId, $untilOrderId,
   $count + 1);

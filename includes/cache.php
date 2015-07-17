@@ -9,8 +9,8 @@ const WAITING_ORDERS_CACHE_SIZE = 300;
 
 const DONE_OR_CANCELED_LOG_CACHE_LIFETIME = 10000;
 
-function getDoneOrCanceledLog($sinceTime) {
-  $cacheDbInfo = getDbForCache();
+function getDoneOrCanceledLog($userId, $sinceTime) {
+  $cacheDbInfo = getDbForCache($userId);
 
   if (getIfExists(CONFIG, 'use_cache') !== true || !$cacheDbInfo) {
     return \storage\getDoneOrCanceledLog($sinceTime);
@@ -37,6 +37,9 @@ function getDoneOrCanceledLog($sinceTime) {
   }
   if (!cacheDoneOrCanceledLog($link, $orders, $timestamp)) {
     logError('cannot cache done_or_canceled_log');
+  }
+  if (!\database\setCacheExpirationTime($link, WAITING_ORDERS_CACHE_ID, 0)) {
+    logError('cannot invalidate waiting_orders cache');
   }
   return $orders;
 }
@@ -79,9 +82,10 @@ function cacheDoneOrCanceledLog($link, $orders, $timestamp) {
   return \database\commitTransaction($link);
 }
 
-function getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
+function getWaitingOrders($userId,
+                          $sinceTime, $sinceCustomerId, $sinceOrderId,
                           $untilTime, $untilCustomerId, $untilOrderId, $count) {
-  $cacheDbInfo = getDbForCache();
+  $cacheDbInfo = getDbForCache($userId);
 
   if (getIfExists(CONFIG, 'use_cache') !== true || !$cacheDbInfo) {
     return \storage\getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
