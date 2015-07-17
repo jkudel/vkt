@@ -237,44 +237,9 @@ function getDoneOrCanceledLog($sinceTime) {
     }
     array_push($arrays, $elements);
   }
-  return mergeSortedArrays($arrays, function($element) {
+  return mergeSortedArrays($arrays, false, false, function($element) {
     return $element['time'];
   });
-}
-
-function mergeSortedArrays($arrays, $func) {
-  $result = [];
-  $indexes = array_fill(0, sizeof($arrays), 0);
-
-  while (true) {
-    $maxValue = null;
-    $maxElement = null;
-    $maxArrayIndex = null;
-    $i = 0;
-
-    foreach ($arrays as $arr) {
-      $index = $indexes[$i];
-      $element = getIfExists($arr, $index);
-
-      if (!is_null($element)) {
-        $value = $func($element);
-        
-        if (is_null($maxElement) || $value > $maxValue) {
-          $maxElement = $element;
-          $maxValue = $value;
-          $maxArrayIndex = $i;
-        }
-      }
-      $i++;
-    }
-    if (is_null($maxElement)) {
-      break;
-    } else {
-      $indexes[$maxArrayIndex]++;
-      array_push($result, $maxElement);
-    }
-  }
-  return $result;
 }
 
 function getDoneOrdersForExecutor($userId,
@@ -320,7 +285,7 @@ function getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
     }
     array_push($arrays, $elements);
   }
-  return mergeSortedArrays($arrays, function ($element) {
+  return mergeSortedArrays($arrays, false, false, function ($element) {
     return $element['time'];
   });
 }

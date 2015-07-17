@@ -16,7 +16,7 @@ $count = intval(getIfExists($_GET, 'count'));
 if (!$count) {
   $count = 1;
 }
-$orders = \storage\getWaitingOrders(
+$orders = \cache\getWaitingOrders(
   $sinceTime, $sinceCustomerId, $sinceOrderId,
   $untilTime, $untilCustomerId, $untilOrderId,
   $count + 1);

@@ -13,7 +13,9 @@ const CONFIG = [
     'done_orders_for_customer' => [1, 2],
     'done_orders_for_executor' => [1, 2],
     'sequences' => [0],
-    'sessions' => [1, 2]
+    'sessions' => [1, 2],
+    'cache' => [0]
   ],
-  'store_sessions_in_db' => true
+  'store_sessions_in_db' => true,
+  'use_cache' => true
 ];

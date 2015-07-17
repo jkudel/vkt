@@ -17,21 +17,28 @@ function insertUser($link, $userId, $userName, $passwordHash, $role) {
 }
 
 function getNextUserId($link) {
-  if (!mysqli_query($link, 'UPDATE sequences SET user_id = user_id + 1')) {
-    logMysqlError('cannot execute query', $link);
+  if (!performQuery($link, 'UPDATE sequences SET user_id = user_id + 1')) {
     rollbackTransaction($link);
     return 0;
   }
-  $result = mysqli_query($link, 'SELECT user_id FROM sequences');
+  $result = performQuery($link, 'SELECT user_id FROM sequences');
 
   if (!$result) {
-    logMysqlError('cannot execute query', $link);
     rollbackTransaction($link);
     return 0;
   }
   $value = intval(fetchOnlyValue($result));
   mysqli_free_result($result);
   return $value;
+}
+
+function performQuery($link, $query) {
+  $result = mysqli_query($link, $query);
+
+  if (!$result) {
+    logMysqlError('cannot execute query', $link);
+  }
+  return $result;
 }
 
 function getUserIdByName($link, $name) {
@@ -221,7 +228,11 @@ function insertIntoDoneTables($doneForCustomerLink, $doneForExecutorLink, $order
 }
 
 function selectDoneOrCanceledLog($link, $sinceTime) {
-  $stmt = prepareQuery($link, 'SELECT order_id, customer_id, time FROM done_or_canceled_log WHERE time >= ?');
+  return doGetDoneOrCanceledLog($link, $sinceTime, 'done_or_canceled_log');
+}
+
+function doGetDoneOrCanceledLog($link, $sinceTime, $tableName) {
+  $stmt = prepareQuery($link, 'SELECT order_id, customer_id, time '.'FROM ' . $tableName . ' WHERE TIME >= ?');
 
   if (is_null($stmt)) {
     return null;
@@ -251,6 +262,96 @@ function selectOrders($link, $tableName, $timeColumnName, $count, $condition) {
     return null;
   }
   return executeAndGetResultAssoc($stmt, null);
+}
+
+function getWaitingOrdersCache($link) {
+  $result = performQuery($link, 'SELECT * FROM waiting_orders_cache ORDER BY time DESC, ' .
+    'customer_id DESC, order_id DESC');
+  return $result ? fetchAllAssoc($result) : null;
+}
+
+function putWaitingOrdersCache($link, $orders) {
+  if (!performQuery($link, 'TRUNCATE waiting_orders_cache')) {
+    return false;
+  }
+  if (!$orders) {
+    return true;
+  }
+  $valuesPart = '';
+
+  foreach ($orders as $order) {
+    $s = '(' .
+      $order['order_id'] . ', ' .
+      $order['customer_id'] . ', "' .
+      mysqli_real_escape_string($link, $order['description']) . '", ' .
+      $order['price'] . ', ' .
+      intval($order['time']) . ')';
+
+    if ($valuesPart) {
+      $valuesPart .= ', ';
+    }
+    $valuesPart .= $s;
+  }
+  return performQuery($link, "INSERT INTO waiting_orders_cache ".
+    "(order_id, customer_id, description, price, time) VALUES $valuesPart");
+}
+
+function getDoneOrCanceledLogCache($link) {
+  return doGetDoneOrCanceledLog($link, 0, 'done_or_canceled_log_cache');
+}
+
+function putDoneOrCanceledLogCache($link, $orders) {
+  if (!performQuery($link, 'TRUNCATE done_or_canceled_log_cache')) {
+    return false;
+  }
+  if (!$orders) {
+    return true;
+  }
+  $valuesPart = '';
+
+  foreach ($orders as $order) {
+    $s = '(' . $order['order_id'] . ', ' . $order['customer_id'] . ', ' . $order['time'] . ')';
+
+    if ($valuesPart) {
+      $valuesPart .= ', ';
+    }
+    $valuesPart .= $s;
+  }
+  return performQuery($link, "INSERT INTO done_or_canceled_log_cache ".
+    "(order_id, customer_id, time) VALUES $valuesPart");
+}
+
+function getTimestamp($link) {
+  $result = performQuery($link, 'SELECT UNIX_TIMESTAMP()');
+  return $result ? fetchOnlyValue($result) : null;
+}
+
+function getCacheExpirationTime($link, $cacheId) {
+  $stmt = prepareQuery($link, 'SELECT time FROM expiration_times WHERE id = ?');
+
+  if (!$stmt) {
+    return null;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'i', $cacheId)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  return executeAndProcessResult($stmt, null, function ($result) {
+    return fetchOnlyValue($result);
+  });
+}
+
+function setCacheExpirationTime($link, $cacheId, $time) {
+  $stmt = prepareQuery($link, 'REPLACE INTO expiration_times (id, time) VALUES (?, ?)');
+
+  if (!$stmt) {
+    return false;
+  }
+  if (!mysqli_stmt_bind_param($stmt, 'ii', $cacheId, $time)) {
+    logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    return null;
+  }
+  return executeStatement($stmt);
 }
 
 function readSession($link, $sessionId) {
@@ -308,8 +409,9 @@ function writeSession($link, $sessionId, $data) {
     return false;
   }
   $time = time();
+  $s = htmlentities($data, ENT_QUOTES);
 
-  if (!mysqli_stmt_bind_param($stmt, 'iss', $time, htmlentities($data, ENT_QUOTES), $sessionId)) {
+  if (!mysqli_stmt_bind_param($stmt, 'iss', $time, $s, $sessionId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
     return false;
   }
@@ -413,13 +515,17 @@ function fetchOnlyValue($result) {
 
 function executeAndGetResultAssoc($stmt, $defaultValue) {
   return executeAndProcessResult($stmt, $defaultValue, function ($result) {
-    $elements = [];
-
-    while ($e = mysqli_fetch_assoc($result)) {
-      array_push($elements, $e);
-    }
-    return $elements;
+    return fetchAllAssoc($result);
   });
+}
+
+function fetchAllAssoc($result) {
+  $elements = [];
+
+  while ($e = mysqli_fetch_assoc($result)) {
+    array_push($elements, $e);
+  }
+  return $elements;
 }
 
 function executeAndProcessResult($stmt, $errorValue, $func) {

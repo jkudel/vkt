@@ -82,3 +82,7 @@ function getDbForDoneOrCanceledLog($customerId) {
 function getAllDbsForDoneOrCanceledLog() {
   return getShardsByTableName('done_or_canceled_log');
 }
+
+function getDbForCache() {
+  return chooseShard(getShardsByTableName('cache'), microtime());
+}

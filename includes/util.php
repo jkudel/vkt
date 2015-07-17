@@ -84,3 +84,42 @@ function printJsArrayContent($array) {
     $i++;
   }
 }
+
+function mergeSortedArrays($arrays, $removeDuplicates, $asc, $func) {
+  $result = [];
+  $indexes = array_fill(0, sizeof($arrays), 0);
+
+  while (true) {
+    $bestValue = null;
+    $bestElement = null;
+    $bestArrayIndex = null;
+    $i = 0;
+
+    foreach ($arrays as $arr) {
+      $index = $indexes[$i];
+      $element = getIfExists($arr, $index);
+
+      if (!is_null($element)) {
+        $value = $func($element);
+
+        if (is_null($bestElement) || ($asc && $value < $bestValue) || (!$asc && $value > $bestValue)) {
+          $bestElement = $element;
+          $bestValue = $value;
+          $bestArrayIndex = $i;
+        }
+      }
+      $i++;
+    }
+    if (is_null($bestElement)) {
+      break;
+    } else {
+      $indexes[$bestArrayIndex]++;
+      $lastElement = getIfExists($result, sizeof($result) - 1);
+
+      if (!$removeDuplicates || is_null($lastElement) || $func($lastElement) != $bestValue) {
+        array_push($result, $bestElement);
+      }
+    }
+  }
+  return $result;
+}

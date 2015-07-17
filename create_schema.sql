@@ -75,5 +75,35 @@ CREATE TABLE sessions (
   touch_time BIGINT       NOT NULL,
   data       TEXT         NOT NULL
 )
-  CHARACTER SET utf8
+  CHARACTER SET = utf8
   ENGINE = InnoDB;
+
+# Tables for caching
+
+CREATE TABLE expiration_times (
+  id   TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  time BIGINT UNSIGNED  NOT NULL
+)
+  CHARACTER SET = utf8
+  ENGINE = MEMORY;
+
+CREATE TABLE waiting_orders_cache (
+  order_id    INT UNSIGNED            NOT NULL,
+  customer_id INT UNSIGNED            NOT NULL,
+  description VARCHAR(200)            NOT NULL,
+  price       DECIMAL(10, 2) UNSIGNED NOT NULL,
+  time        BIGINT UNSIGNED         NOT NULL,
+  PRIMARY KEY (order_id, customer_id)
+)
+  CHARACTER SET = utf8
+  ENGINE = MEMORY;
+
+CREATE TABLE done_or_canceled_log_cache (
+  order_id    INT UNSIGNED    NOT NULL,
+  customer_id INT UNSIGNED    NOT NULL,
+  time        BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (order_id, customer_id),
+  INDEX (time)
+)
+  CHARACTER SET = utf8
+  ENGINE = MEMORY;
