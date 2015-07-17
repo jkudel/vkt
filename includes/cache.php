@@ -4,10 +4,9 @@ namespace cache;
 const FEED_CACHE_ID = 1;
 const DONE_OR_CANCELED_LOG_CACHE_ID = 2;
 
-const WAITING_ORDERS_CACHE_LIFETIME = 10;
-const WAITING_ORDERS_CACHE_SIZE = 300;
-
-const DONE_OR_CANCELED_LOG_CACHE_LIFETIME = 10000;
+const FEED_CACHE_LIFETIME = 10;
+const FEED_CACHE_SIZE = 300;
+const DONE_OR_CANCELED_LOG_CACHE_LIFETIME = 10;
 
 function getDoneOrCanceledLog($userId, $lwTime) {
   $cacheDbInfo = getDbForCache($userId);
@@ -71,7 +70,7 @@ function cacheDoneOrCanceledLog($link, $orders, $timestamp) {
   if (!\database\beginTransaction($link)) {
     return false;
   }
-  $expirationTime = $timestamp + WAITING_ORDERS_CACHE_LIFETIME;
+  $expirationTime = $timestamp + DONE_OR_CANCELED_LOG_CACHE_LIFETIME;
 
   if (!\database\setCacheExpirationTime($link, DONE_OR_CANCELED_LOG_CACHE_ID, $expirationTime) ||
     !\database\putDoneOrCanceledLogCache($link, $orders)
@@ -109,7 +108,7 @@ function getWaitingOrders($userId,
     return $ordersFromCache;
   }
   if ($ordersFromCache !== false) {
-    $orders = \storage\getWaitingOrders(0, 0, 0, 0, 0, 0, WAITING_ORDERS_CACHE_SIZE);
+    $orders = \storage\getWaitingOrders(0, 0, 0, 0, 0, 0, FEED_CACHE_SIZE);
 
     if (is_null($orders)) {
       return null;
@@ -160,14 +159,14 @@ function filterWaitingOrders($orders, $lowerBound, $upperBound, $count) {
       }
     }
   }
-  return WAITING_ORDERS_CACHE_SIZE == sizeof($orders) ? false : $result;
+  return FEED_CACHE_SIZE == sizeof($orders) ? false : $result;
 }
 
 function cacheWaitingOrders($link, $orders, $timestamp) {
   if (!\database\beginTransaction($link)) {
     return false;
   }
-  $expirationTime = $timestamp + WAITING_ORDERS_CACHE_LIFETIME;
+  $expirationTime = $timestamp + FEED_CACHE_LIFETIME;
 
   if (!\database\setCacheExpirationTime($link, FEED_CACHE_ID, $expirationTime) ||
     !\database\putFeedCache($link, $orders)
