@@ -11,7 +11,7 @@ function loadOrdersForExecutor(reload, count) {
     viewMode.next('.error-placeholder').text(errorMessage);
   };
   var done = viewMode.val() == 'done';
-  var params = buildParamsUntilLastOrder(done ? 'done_time' : 'time');
+  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
 
   if (count) {
     params['count'] = count;
@@ -25,7 +25,7 @@ function loadOrdersForExecutor(reload, count) {
 }
 
 function loadNewWaitingOrders() {
-  var params = buildParamsSinceFirstOrder('time');
+  var params = buildParamsNewerThanFirstOrder('time');
 
   ajaxGetWaitingOrders(params, function (response) {
     $('#show-new-orders').hide();
@@ -88,7 +88,7 @@ function scheduleCheckingUpdatesForExecutor() {
       scheduleCheckingUpdatesForExecutor();
       return;
     }
-    var params = buildParamsSinceFirstOrder('time');
+    var params = buildParamsNewerThanFirstOrder('time');
 
     ajaxCheckForUpdates(params, function (response) {
       applyUpdates(response);

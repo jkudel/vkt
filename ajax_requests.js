@@ -26,8 +26,8 @@ function handleErrorResponse(xhr, error, errorCallback) {
 /**
  * Params:
  *   done, count,
- *   since_time, since_order_id,
- *   until_time, until_order_id
+ *   lw_time, lw_order_id,
+ *   up_time, up_order_id
  */
 function ajaxGetMyOrders(params, successCallback, errorCallback) {
   $.ajax({
@@ -46,8 +46,8 @@ function ajaxGetMyOrders(params, successCallback, errorCallback) {
 /**
  * Params:
  *   count,
- *   since_time, since_order_id,
- *   until_time, until_order_id
+ *   lw_time, lw_order_id,
+ *   up_time, up_order_id
  */
 function ajaxGetWaitingOrders(params, successCallback, errorCallback) {
   $.ajax({

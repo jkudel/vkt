@@ -7,15 +7,15 @@ if (is_null($userId)) {
   notAuthErrorResponse();
   return;
 }
-$sinceTime = intval(getIfExists($_GET, 'since_time'));
-$sinceParsedOrderId = getParsedOrderId($_GET, 'since_order_id');
-$sinceCustomerId = $sinceParsedOrderId ? $sinceParsedOrderId['customer_id'] : 0;
-$sinceOrderId = $sinceParsedOrderId ? $sinceParsedOrderId['order_id'] : 0;
+$lwTime = intval(getIfExists($_GET, 'lw_time'));
+$lwParsedOrderId = getParsedOrderId($_GET, 'lw_order_id');
+$lwCustomerId = $lwParsedOrderId ? $lwParsedOrderId['customer_id'] : 0;
+$lwOrderId = $lwParsedOrderId ? $lwParsedOrderId['order_id'] : 0;
 
-$untilTime = intval(getIfExists($_GET, 'until_time'));
-$untilParsedOrderId = getParsedOrderId($_GET, 'until_order_id');
-$untilCustomerId = $untilParsedOrderId ? $untilParsedOrderId['customer_id'] : 0;
-$untilOrderId = $untilParsedOrderId ? $untilParsedOrderId['order_id'] : 0;
+$upTime = intval(getIfExists($_GET, 'up_time'));
+$upParsedOrderId = getParsedOrderId($_GET, 'up_order_id');
+$upCustomerId = $upParsedOrderId ? $upParsedOrderId['customer_id'] : 0;
+$upOrderId = $upParsedOrderId ? $upParsedOrderId['order_id'] : 0;
 
 $count = intval(getIfExists($_GET, 'count'));
 
@@ -24,8 +24,8 @@ if (!$count) {
 }
 $orders = \cache\getWaitingOrders(
   $userId,
-  $sinceTime, $sinceCustomerId, $sinceOrderId,
-  $untilTime, $untilCustomerId, $untilOrderId,
+  $lwTime, $lwCustomerId, $lwOrderId,
+  $upTime, $upCustomerId, $upOrderId,
   $count + 1);
 
 if (is_null($orders)) {

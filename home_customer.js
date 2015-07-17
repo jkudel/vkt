@@ -4,7 +4,7 @@ function loadOrdersForCustomer(reload, count) {
   }
   var viewMode = $('#view-mode');
   var done = viewMode.val() == 'done' ? 1 : 0;
-  var params = buildParamsUntilLastOrder(done ? 'done_time' : 'time');
+  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
   params['done'] = done;
 
   if (count) {
@@ -67,7 +67,7 @@ function scheduleCheckingUpdatesForCustomer() {
 }
 
 function loadNewDoneOrders(runAfter) {
-  var params = buildParamsSinceFirstOrder('done_time');
+  var params = buildParamsNewerThanFirstOrder('done_time');
   params['done'] = 1;
 
   ajaxGetMyOrders(params, function (response) {

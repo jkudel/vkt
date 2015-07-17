@@ -9,11 +9,11 @@ const WAITING_ORDERS_CACHE_SIZE = 300;
 
 const DONE_OR_CANCELED_LOG_CACHE_LIFETIME = 10000;
 
-function getDoneOrCanceledLog($userId, $sinceTime) {
+function getDoneOrCanceledLog($userId, $lwTime) {
   $cacheDbInfo = getDbForCache($userId);
 
   if (getIfExists(CONFIG, 'use_cache') !== true || !$cacheDbInfo) {
-    return \storage\getDoneOrCanceledLog($sinceTime);
+    return \storage\getDoneOrCanceledLog($lwTime);
   }
   $link = \storage\connect($cacheDbInfo);
 
@@ -25,7 +25,7 @@ function getDoneOrCanceledLog($userId, $sinceTime) {
   if (!$timestamp) {
     return null;
   }
-  $ordersFromCache = getCachedDoneOrCanceledLog($link, $sinceTime, $timestamp);
+  $ordersFromCache = getCachedDoneOrCanceledLog($link, $lwTime, $timestamp);
 
   if (!is_null($ordersFromCache)) {
     return $ordersFromCache;
@@ -44,7 +44,7 @@ function getDoneOrCanceledLog($userId, $sinceTime) {
   return $orders;
 }
 
-function getCachedDoneOrCanceledLog($link, $sinceTime, $timestamp) {
+function getCachedDoneOrCanceledLog($link, $lwTime, $timestamp) {
   $expirationTime = \database\getCacheExpirationTime($link, DONE_OR_CANCELED_LOG_CACHE_ID);
 
   if (!$expirationTime || $timestamp > $expirationTime) {
@@ -52,14 +52,14 @@ function getCachedDoneOrCanceledLog($link, $sinceTime, $timestamp) {
   }
   $cachedOrders = \database\getDoneOrCanceledLogCache($link);
   return is_null($cachedOrders) ? null :
-    filterDoneOrCanceledLog($cachedOrders, $sinceTime);
+    filterDoneOrCanceledLog($cachedOrders, $lwTime);
 }
 
-function filterDoneOrCanceledLog($orders, $sinceTime) {
+function filterDoneOrCanceledLog($orders, $lwTime) {
   $result = [];
 
   foreach ($orders as $order) {
-    if ($order['time'] <= $sinceTime) {
+    if ($order['time'] <= $lwTime) {
       return $result;
     }
     array_push($result, $order);
@@ -83,16 +83,16 @@ function cacheDoneOrCanceledLog($link, $orders, $timestamp) {
 }
 
 function getWaitingOrders($userId,
-                          $sinceTime, $sinceCustomerId, $sinceOrderId,
-                          $untilTime, $untilCustomerId, $untilOrderId, $count) {
+                          $lwTime, $lwCustomerId, $lwOrderId,
+                          $upTime, $upCustomerId, $upOrderId, $count) {
   $cacheDbInfo = getDbForCache($userId);
 
   if (getIfExists(CONFIG, 'use_cache') !== true || !$cacheDbInfo) {
-    return \storage\getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
-      $untilTime, $untilCustomerId, $untilOrderId, $count);
+    return \storage\getWaitingOrders($lwTime, $lwCustomerId, $lwOrderId,
+      $upTime, $upCustomerId, $upOrderId, $count);
   }
-  $since = $sinceTime ? [$sinceTime, $sinceCustomerId, $sinceOrderId] : null;
-  $until = $untilTime ? [$untilTime, $untilCustomerId, $untilOrderId] : null;
+  $lowerBound = $lwTime ? [$lwTime, $lwCustomerId, $lwOrderId] : null;
+  $upperBound = $upTime ? [$upTime, $upCustomerId, $upOrderId] : null;
   $link = \storage\connect($cacheDbInfo);
 
   if (!$link) {
@@ -103,7 +103,7 @@ function getWaitingOrders($userId,
   if (!$timestamp) {
     return null;
   }
-  $ordersFromCache = getCachedWaitingOrders($link, $since, $until, $count, $timestamp);
+  $ordersFromCache = getCachedWaitingOrders($link, $lowerBound, $upperBound, $count, $timestamp);
 
   if (!is_null($ordersFromCache) && $ordersFromCache !== false) {
     return $ordersFromCache;
@@ -117,18 +117,18 @@ function getWaitingOrders($userId,
     if (!cacheWaitingOrders($link, $orders, $timestamp)) {
       logError('cannot cache waiting orders');
     }
-    $filteredOrders = filterWaitingOrders($orders, $since, $until, $count);
+    $filteredOrders = filterWaitingOrders($orders, $lowerBound, $upperBound, $count);
 
     if ($filteredOrders !== false) {
       return $filteredOrders;
     }
   }
-  return \storage\getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
-    $untilTime, $untilCustomerId, $untilOrderId, $count);
+  return \storage\getWaitingOrders($lwTime, $lwCustomerId, $lwOrderId,
+    $upTime, $upCustomerId, $upOrderId, $count);
 }
 
 
-function getCachedWaitingOrders($link, $since, $until, $count, $timestamp) {
+function getCachedWaitingOrders($link, $lowerBound, $upperBound, $count, $timestamp) {
   $expirationTime = \database\getCacheExpirationTime($link, WAITING_ORDERS_CACHE_ID);
 
   if (!$expirationTime || $timestamp > $expirationTime) {
@@ -136,21 +136,21 @@ function getCachedWaitingOrders($link, $since, $until, $count, $timestamp) {
   }
   $cachedOrders = \database\getWaitingOrdersCache($link);
   return is_null($cachedOrders) ? null :
-    filterWaitingOrders($cachedOrders, $since, $until, $count);
+    filterWaitingOrders($cachedOrders, $lowerBound, $upperBound, $count);
 }
 
-function filterWaitingOrders($orders, $since, $until, $count) {
+function filterWaitingOrders($orders, $lowerBound, $upperBound, $count) {
   $started = false;
   $result = [];
 
   foreach ($orders as $order) {
     $key = buildKey($order);
 
-    if (!$started && (!$until || compare($key, $until) < 0)) {
+    if (!$started && (!$upperBound || compare($key, $upperBound) < 0)) {
       $started = true;
     }
     if ($started) {
-      if ($since && compare($key, $since) <= 0) {
+      if ($lowerBound && compare($key, $lowerBound) <= 0) {
         return $result;
       }
       array_push($result, $order);

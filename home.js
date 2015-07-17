@@ -4,27 +4,27 @@ var buildOrderBlockInFeed = null;
 var feedOrdersIdSet = {};
 var feedOrders = [];
 
-function buildParamsUntilLastOrder(timeFieldName) {
+function buildParamsOlderThanLastOrder(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
 
   if (feedOrders.length == 0) {
     return result;
   }
   var order = feedOrders[feedOrders.length - 1];
-  result['until_time'] = order[timeFieldName];
-  result['until_order_id'] = order['order_id'];
+  result['up_time'] = order[timeFieldName];
+  result['up_order_id'] = order['order_id'];
   return result;
 }
 
-function buildParamsSinceFirstOrder(timeFieldName) {
+function buildParamsNewerThanFirstOrder(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
 
   if (feedOrders.length == 0) {
     return result;
   }
   var order = feedOrders[0];
-  result['since_time'] = order[timeFieldName];
-  result['since_order_id'] = order['order_id'];
+  result['lw_time'] = order[timeFieldName];
+  result['lw_order_id'] = order['order_id'];
   return result;
 }
 

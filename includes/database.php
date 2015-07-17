@@ -227,17 +227,17 @@ function insertIntoDoneTables($doneForCustomerLink, $doneForExecutorLink, $order
   return executeStatement($stmt);
 }
 
-function selectDoneOrCanceledLog($link, $sinceTime) {
-  return doGetDoneOrCanceledLog($link, $sinceTime, 'done_or_canceled_log');
+function selectDoneOrCanceledLog($link, $lwTime) {
+  return doGetDoneOrCanceledLog($link, $lwTime, 'done_or_canceled_log');
 }
 
-function doGetDoneOrCanceledLog($link, $sinceTime, $tableName) {
+function doGetDoneOrCanceledLog($link, $lwTime, $tableName) {
   $stmt = prepareQuery($link, 'SELECT order_id, customer_id, time '.'FROM ' . $tableName . ' WHERE TIME >= ?');
 
   if (is_null($stmt)) {
     return null;
   }
-  if (!mysqli_stmt_bind_param($stmt, 'i', $sinceTime)) {
+  if (!mysqli_stmt_bind_param($stmt, 'i', $lwTime)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
     return null;
   }

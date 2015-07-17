@@ -221,7 +221,7 @@ function insertOrderIntoDoneTables($orderInfo, $executorId, $profit) {
     $orderInfo, $customerId, $executorId, $profit);
 }
 
-function getDoneOrCanceledLog($sinceTime) {
+function getDoneOrCanceledLog($lwTime) {
   $arrays = [];
 
   foreach (getAllDbsForDoneOrCanceledLog() as $dbInfo) {
@@ -230,7 +230,7 @@ function getDoneOrCanceledLog($sinceTime) {
     if (!$link) {
       return null;
     }
-    $elements = \database\selectDoneOrCanceledLog($link, $sinceTime);
+    $elements = \database\selectDoneOrCanceledLog($link, $lwTime);
 
     if (is_null($elements)) {
       return null;
@@ -243,11 +243,11 @@ function getDoneOrCanceledLog($sinceTime) {
 }
 
 function getDoneOrdersForExecutor($userId,
-                                  $sinceTime, $sinceCustomerId, $sinceOrderId,
-                                  $untilTime, $untilCustomerId, $untilOrderId,
+                                  $lwTime, $lwCustomerId, $lwOrderId,
+                                  $upTime, $upCustomerId, $upOrderId,
                                   $count) {
-  $params = buildParamsForGetOrders('done_time', $sinceTime, $sinceCustomerId, $sinceOrderId,
-    $untilTime, $untilCustomerId, $untilOrderId);
+  $params = buildParamsForGetOrders('done_time', $lwTime, $lwCustomerId, $lwOrderId,
+    $upTime, $upCustomerId, $upOrderId);
   $dbInfo = getDbForDoneOrdersForExecutor($userId);
   $link = $dbInfo ? connect($dbInfo) : null;
   return !$link ? null : doGetOrders($link, 'done_orders_for_executor',
@@ -255,10 +255,10 @@ function getDoneOrdersForExecutor($userId,
 }
 
 function getOrdersForCustomer($userId, $done,
-                              $sinceTime, $sinceOrderId, $untilTime, $untilOrderId,
+                              $lwTime, $lwOrderId, $upTime, $upOrderId,
                               $count) {
   $timeColumnName = $done ? 'done_time' : 'time';
-  $params = buildParamsForGetOrders($timeColumnName, $sinceTime, 0, $sinceOrderId, $untilTime, 0, $untilOrderId);
+  $params = buildParamsForGetOrders($timeColumnName, $lwTime, 0, $lwOrderId, $upTime, 0, $upOrderId);
   $tableName = $done ? 'done_orders_for_customer' : 'waiting_orders';
   $dbInfo = $done ? getDbForDoneOrdersForCustomer($userId) : getDbForWaitingOrders($userId);
   $link = $dbInfo ? connect($dbInfo) : null;
@@ -266,10 +266,10 @@ function getOrdersForCustomer($userId, $done,
     'customer_id = ' . intval($userId), $count, $params);
 }
 
-function getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
-                          $untilTime, $untilCustomerId, $untilOrderId, $count) {
-  $params = buildParamsForGetOrders('time', $sinceTime, $sinceCustomerId, $sinceOrderId,
-    $untilTime, $untilCustomerId, $untilOrderId);
+function getWaitingOrders($lwTime, $lwCustomerId, $lwOrderId,
+                          $upTime, $upCustomerId, $upOrderId, $count) {
+  $params = buildParamsForGetOrders('time', $lwTime, $lwCustomerId, $lwOrderId,
+    $upTime, $upCustomerId, $upOrderId);
   $arrays = [];
   
   foreach (getAllDbsForWaitingOrders() as $dbInfo) {
@@ -291,65 +291,65 @@ function getWaitingOrders($sinceTime, $sinceCustomerId, $sinceOrderId,
 }
 
 function buildParamsForGetOrders($timeColumnName,
-                                 $sinceTime, $sinceCustomerId, $sinceOrderId,
-                                 $untilTime, $untilCustomerId, $untilOrderId) {
+                                 $lwTime, $lwCustomerId, $lwOrderId,
+                                 $upTime, $upCustomerId, $upOrderId) {
   $params = [
     'time_column_name' => $timeColumnName,
-    'since_time' => $sinceTime,
-    'since_customer_id' => $sinceCustomerId,
-    'since_order_id' => $sinceOrderId,
-    'until_time' => $untilTime,
-    'until_customer_id' => $untilCustomerId,
-    'until_order_id' => $untilOrderId
+    'lw_time' => $lwTime,
+    'lw_customer_id' => $lwCustomerId,
+    'lw_order_id' => $lwOrderId,
+    'up_time' => $upTime,
+    'up_customer_id' => $upCustomerId,
+    'up_order_id' => $upOrderId
   ];
   return $params;
 }
 
-function buildSinceCondition($params) {
+function buildLowerBoundCondition($params) {
   $timeColumnName = getIfExists($params, 'time_column_name');
-  $sinceTime = intval(getIfExists($params, 'since_time'));
+  $lwTime = intval(getIfExists($params, 'lw_time'));
 
-  if (!$sinceTime || !$timeColumnName) {
+  if (!$lwTime || !$timeColumnName) {
     return '';
   }
-  $sinceOrderId = intval(getIfExists($params, 'since_order_id'));
-  $sinceCustomerId = intval(getIfExists($params, 'since_customer_id'));
+  $lwOrderId = intval(getIfExists($params, 'lw_order_id'));
+  $lwCustomerId = intval(getIfExists($params, 'lw_customer_id'));
 
-  if ($sinceCustomerId == 0 && $sinceOrderId == 0) {
-    return $timeColumnName . ' >= ' . $sinceTime;
+  if ($lwCustomerId == 0 && $lwOrderId == 0) {
+    return $timeColumnName . ' >= ' . $lwTime;
   } else {
-    $condition = $timeColumnName . ' > ' . $sinceTime . ' OR ' . $timeColumnName . ' = ' . $sinceTime . ' AND ';
+    $condition = $timeColumnName . ' > ' . $lwTime . ' OR ' . $timeColumnName . ' = ' . $lwTime . ' AND ';
 
-    if ($sinceCustomerId > 0) {
-      $condition .= '(customer_id > ' . $sinceCustomerId . ' OR customer_id = ' . $sinceCustomerId .
-        ' AND order_id > ' . $sinceOrderId . ')';
+    if ($lwCustomerId > 0) {
+      $condition .= '(customer_id > ' . $lwCustomerId . ' OR customer_id = ' . $lwCustomerId .
+        ' AND order_id > ' . $lwOrderId . ')';
     } else {
-      $condition .= 'order_id > ' . $sinceOrderId;
+      $condition .= 'order_id > ' . $lwOrderId;
     }
     return $condition;
   }
 }
 
-function buildUntilCondition($params) {
+function buildUpperBoundCondition($params) {
   $timeColumnName = getIfExists($params, 'time_column_name');
-  $untilTime = intval(getIfExists($params, 'until_time'));
+  $upTime = intval(getIfExists($params, 'up_time'));
 
-  if (!$untilTime || !$timeColumnName) {
+  if (!$upTime || !$timeColumnName) {
     return '';
   }
-  $untilOrderId = intval(getIfExists($params, 'until_order_id'));
-  $untilCustomerId = intval(getIfExists($params, 'until_customer_id'));
+  $upOrderId = intval(getIfExists($params, 'up_order_id'));
+  $upCustomerId = intval(getIfExists($params, 'up_customer_id'));
 
-  if ($untilCustomerId == 0 && $untilOrderId == 0) {
-    return $timeColumnName . ' <= ' . $untilTime;
+  if ($upCustomerId == 0 && $upOrderId == 0) {
+    return $timeColumnName . ' <= ' . $upTime;
   } else {
-    $condition = $timeColumnName . ' < ' . $untilTime . ' OR ' . $timeColumnName . ' = ' . $untilTime . ' AND ';
+    $condition = $timeColumnName . ' < ' . $upTime . ' OR ' . $timeColumnName . ' = ' . $upTime . ' AND ';
 
-    if ($untilCustomerId > 0) {
-      $condition .= '(customer_id < ' . $untilCustomerId . ' OR customer_id = ' . $untilCustomerId .
-        ' AND order_id < ' . $untilOrderId . ')';
+    if ($upCustomerId > 0) {
+      $condition .= '(customer_id < ' . $upCustomerId . ' OR customer_id = ' . $upCustomerId .
+        ' AND order_id < ' . $upOrderId . ')';
     } else {
-      $condition .= 'order_id < ' . $untilOrderId;
+      $condition .= 'order_id < ' . $upOrderId;
     }
     return $condition;
   }
@@ -362,21 +362,21 @@ function doGetOrders($link, $tableName, $additionalCondition, $count, $params) {
   if (!$timeColumnName) {
     $timeColumnName = 'time';
   }
-  $sinceCondition = buildSinceCondition($params);
+  $lowerBoundCondition = buildLowerBoundCondition($params);
 
-  if ($sinceCondition) {
+  if ($lowerBoundCondition) {
     if ($condition != '') {
       $condition .= ' AND ';
     }
-    $condition .= '(' . $sinceCondition . ')';
+    $condition .= '(' . $lowerBoundCondition . ')';
   }
-  $untilCondition = buildUntilCondition($params);
+  $upperBoundCondition = buildUpperBoundCondition($params);
 
-  if ($untilCondition) {
+  if ($upperBoundCondition) {
     if ($condition != '') {
       $condition .= ' AND ';
     }
-    $condition .= '(' . $untilCondition . ')';
+    $condition .= '(' . $upperBoundCondition . ')';
   }
   return \database\selectOrders($link, $tableName, $timeColumnName, $count, $condition);
 }

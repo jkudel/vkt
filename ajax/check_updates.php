@@ -8,13 +8,13 @@ if (is_null($userId)) {
   notAuthErrorResponse();
   return;
 }
-$sinceTime = intval(getIfExists($_GET, 'since_time'));
-$parsedSinceOrderId = getParsedOrderId($_GET, 'since_order_id');
-$sinceCustomerId = $parsedSinceOrderId ? $parsedSinceOrderId['customer_id'] : 0;
-$sinceOrderId = $parsedSinceOrderId ? $parsedSinceOrderId['order_id'] : 0;
+$lwTime = intval(getIfExists($_GET, 'lw_time'));
+$lwParsedOrderId = getParsedOrderId($_GET, 'lw_order_id');
+$lwCustomerId = $lwParsedOrderId ? $lwParsedOrderId['customer_id'] : 0;
+$lwOrderId = $lwParsedOrderId ? $lwParsedOrderId['order_id'] : 0;
 
-$orders = \cache\getWaitingOrders($userId, $sinceTime, $sinceCustomerId,
-  $sinceOrderId, 0, 0, 0, MAX_CHECK_COUNT + 1);
+$orders = \cache\getWaitingOrders($userId, $lwTime, $lwCustomerId,
+  $lwOrderId, 0, 0, 0, MAX_CHECK_COUNT + 1);
 
 if (is_null($orders)) {
   internalErrorResponse();
@@ -22,7 +22,7 @@ if (is_null($orders)) {
 }
 $newOrdersCount = min(MAX_CHECK_COUNT, sizeof($orders));
 $newOrdersHasMore = sizeof($orders) > MAX_CHECK_COUNT;
-$log = \cache\getDoneOrCanceledLog($userId, $sinceTime);
+$log = \cache\getDoneOrCanceledLog($userId, $lwTime);
 
 if (is_null($log)) {
   internalErrorResponse();
