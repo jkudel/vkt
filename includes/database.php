@@ -264,14 +264,14 @@ function selectOrders($link, $tableName, $timeColumnName, $count, $condition) {
   return executeAndGetResultAssoc($stmt, null);
 }
 
-function getWaitingOrdersCache($link) {
-  $result = performQuery($link, 'SELECT * FROM waiting_orders_cache ORDER BY time DESC, ' .
+function getFeedCache($link) {
+  $result = performQuery($link, 'SELECT * FROM feed_cache ORDER BY time DESC, ' .
     'customer_id DESC, order_id DESC');
   return $result ? fetchAllAssoc($result) : null;
 }
 
-function putWaitingOrdersCache($link, $orders) {
-  if (!performQuery($link, 'TRUNCATE waiting_orders_cache')) {
+function putFeedCache($link, $orders) {
+  if (!performQuery($link, 'TRUNCATE feed_cache')) {
     return false;
   }
   if (!$orders) {
@@ -292,7 +292,7 @@ function putWaitingOrdersCache($link, $orders) {
     }
     $valuesPart .= $s;
   }
-  return performQuery($link, "INSERT INTO waiting_orders_cache ".
+  return performQuery($link, "INSERT INTO feed_cache ".
     "(order_id, customer_id, description, price, time) VALUES $valuesPart");
 }
 

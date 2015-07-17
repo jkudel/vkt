@@ -87,7 +87,7 @@ CREATE TABLE expiration_times (
   CHARACTER SET = utf8
   ENGINE = MEMORY;
 
-CREATE TABLE waiting_orders_cache (
+CREATE TABLE feed_cache (
   order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
   description VARCHAR(200)            NOT NULL,

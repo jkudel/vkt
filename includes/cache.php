@@ -1,7 +1,7 @@
 <?php
 namespace cache;
 
-const WAITING_ORDERS_CACHE_ID = 1;
+const FEED_CACHE_ID = 1;
 const DONE_OR_CANCELED_LOG_CACHE_ID = 2;
 
 const WAITING_ORDERS_CACHE_LIFETIME = 10;
@@ -38,8 +38,8 @@ function getDoneOrCanceledLog($userId, $lwTime) {
   if (!cacheDoneOrCanceledLog($link, $orders, $timestamp)) {
     logError('cannot cache done_or_canceled_log');
   }
-  if (!\database\setCacheExpirationTime($link, WAITING_ORDERS_CACHE_ID, 0)) {
-    logError('cannot invalidate waiting_orders cache');
+  if (!\database\setCacheExpirationTime($link, FEED_CACHE_ID, 0)) {
+    logError('cannot invalidate feed cache');
   }
   return $orders;
 }
@@ -129,12 +129,12 @@ function getWaitingOrders($userId,
 
 
 function getCachedWaitingOrders($link, $lowerBound, $upperBound, $count, $timestamp) {
-  $expirationTime = \database\getCacheExpirationTime($link, WAITING_ORDERS_CACHE_ID);
+  $expirationTime = \database\getCacheExpirationTime($link, FEED_CACHE_ID);
 
   if (!$expirationTime || $timestamp > $expirationTime) {
     return null;
   }
-  $cachedOrders = \database\getWaitingOrdersCache($link);
+  $cachedOrders = \database\getFeedCache($link);
   return is_null($cachedOrders) ? null :
     filterWaitingOrders($cachedOrders, $lowerBound, $upperBound, $count);
 }
@@ -169,8 +169,8 @@ function cacheWaitingOrders($link, $orders, $timestamp) {
   }
   $expirationTime = $timestamp + WAITING_ORDERS_CACHE_LIFETIME;
 
-  if (!\database\setCacheExpirationTime($link, WAITING_ORDERS_CACHE_ID, $expirationTime) ||
-    !\database\putWaitingOrdersCache($link, $orders)
+  if (!\database\setCacheExpirationTime($link, FEED_CACHE_ID, $expirationTime) ||
+    !\database\putFeedCache($link, $orders)
   ) {
     \database\rollbackTransaction($link);
     return false;
