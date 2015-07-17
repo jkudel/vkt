@@ -1,12 +1,13 @@
 <?php
-require_once('messages.php');
-require_once('util.php');
-require_once('config.php');
-require_once('ajax_util.php');
-require_once('sessions.php');
-require_once('shards.php');
-require_once('database.php');
-require_once('storage.php');
+require_once(__DIR__ . '/messages.php');
+require_once(__DIR__ . '/util.php');
+require_once(__DIR__ . '/config.php');
+require_once(__DIR__ . '/ajax_util.php');
+require_once(__DIR__ . '/sessions.php');
+require_once(__DIR__ . '/shards.php');
+require_once(__DIR__ . '/database.php');
+require_once(__DIR__ . '/storage.php');
+require_once(__DIR__ . '/cache.php');
 
 const COMMISSION = 0.1;
 
