@@ -1,58 +1,84 @@
 var onTheFlyValidationEnabled = false;
+var newUserViewMode = false;
 
-function validateLoginForm() {
+function validateLoginForm(onTheFly) {
   var result = true;
-  result = validateRequiredField($('#login-user-name'), msg('no.username.error')) && result;
-  result = validateRequiredField($('#login-password'), msg('no.password.error')) && result;
+  result = validateRequiredField($('#login-user-name'), msg('no.username.error'), onTheFly) && result;
+  result = validateRequiredField($('#login-password'), msg('no.password.error'), onTheFly) && result;
   return result;
 }
 
-function validateRequiredField(element, errorMessage) {
+function validateRequiredField(element, errorMessage, onTheFly) {
+  var errorPlaceholder = getErrorPlaceholder(element);
+
   if (element.val()) {
-    element.next('span').text('');
+    errorPlaceholder.text('');
+    errorPlaceholder.hide();
     return true;
   } else {
-    element.next('span').text(errorMessage);
+    errorPlaceholder.text(errorMessage);
+
+    if (!onTheFly) {
+      errorPlaceholder.show();
+    }
     return false;
   }
 }
 
-function validateRegisterForm() {
+function getErrorPlaceholder(field) {
+  return field.next('.error-placeholder');
+}
+
+function validateRegisterForm(onTheFly) {
   var userName = $('#register-user-name');
   var password = $('#register-password');
   var repeatPassword = $('#register-repeat-password');
   var result = true;
   var userVal = userName.val();
   var userNameMaxLength = getCommonConstant('user.name.max.length');
+  var userNameErrorPlaceholder = getErrorPlaceholder(userName);
 
+  if (!onTheFly) {
+    userNameErrorPlaceholder.show();
+  }
   if (!userVal) {
-    userName.next('span').text(msg('no.username.error'));
+    userNameErrorPlaceholder.text(msg('no.username.error'));
     result = false;
   } else if (userVal.length > userNameMaxLength) {
-    userName.next('span').text(msg('user.name.length.error', userNameMaxLength));
+    userNameErrorPlaceholder.text(msg('user.name.length.error', userNameMaxLength));
     result = false;
   }  else if (!userVal.match(/^\w+$/)) {
-    userName.next('span').text(msg('invalid.char.in.username.error'));
+    userNameErrorPlaceholder.text(msg('invalid.char.in.username.error'));
     result = false;
   } else {
-    userName.next('span').text('');
+    userNameErrorPlaceholder.text('');
+    userNameErrorPlaceholder.hide();
   }
   var validateRepeatPassword = false;
   var passwordVal = password.val();
   var passwordMinLength = getCommonConstant('password.min.length');
   var passwordMaxLength = getCommonConstant('password.max.length');
+  var passwordErrorPlaceholder = getErrorPlaceholder(password);
 
+  if (!onTheFly) {
+    passwordErrorPlaceholder.show();
+  }
   if (!passwordVal) {
-    password.next('span').text(msg('no.password.error'));
+    passwordErrorPlaceholder.text(msg('no.password.error'));
     result = false;
-  } else if (passwordVal.length < passwordMinLength || passwordVal.length > passwordMaxLength) {
-    password.next('span').text(msg('password.length.error', passwordMinLength, passwordMaxLength));
+  } else if (!onTheFly && passwordVal.length < passwordMinLength || passwordVal.length > passwordMaxLength) {
+    passwordErrorPlaceholder.text(msg('password.length.error', passwordMinLength, passwordMaxLength));
     result = false;
   } else {
-    password.next('span').text('');
+    passwordErrorPlaceholder.text('');
+    passwordErrorPlaceholder.hide();
     validateRepeatPassword = true;
   }
+  var repeatPasswordErrorPlaceholder = getErrorPlaceholder(repeatPassword);
 
+  if (!onTheFly) {
+    repeatPasswordErrorPlaceholder.show();
+  }
   if (validateRepeatPassword) {
     var error = '';
 
@@ -64,9 +90,10 @@ function validateRegisterForm() {
       error = msg('passwords.matching.error');
       result = false;
     }
-    repeatPassword.next('span').text(error);
+    repeatPasswordErrorPlaceholder.text(error);
   } else {
-    repeatPassword.next('span').text('');
+    repeatPasswordErrorPlaceholder.text('');
+    repeatPasswordErrorPlaceholder.hide();
   }
   return result;
 }
@@ -76,69 +103,79 @@ function submitFormAndGoHome(url, form) {
     window.location.href = 'index.php';
   }, function (errorMessage, errorCode, response) {
     var fieldName = response['field_name'];
-    var field = fieldName ? form.find('input[name="' + fieldName + '"]+span') : null;
+    var errorPlaceholder = fieldName ? getErrorPlaceholder(form.find('input[name="' + fieldName + '"]')) : null;
 
-    if (field && field.length) {
-      field.text(errorMessage)
+    if (errorPlaceholder && errorPlaceholder.length) {
+      errorPlaceholder.text(errorMessage);
+      errorPlaceholder.show();
     } else {
-      $('#error-placeholder').text(errorMessage);
+      var globalErrorPlaceholder = $('#global-error-placeholder');
+      globalErrorPlaceholder.text(errorMessage);
+      globalErrorPlaceholder.show();
     }
   });
 }
 
 function updateFormShown() {
-  if ($('#already-registered').is(':checked')) {
-    $('#login-form').fadeIn('fast');
-    $('#register-form').hide();
-  } else {
-    $('#login-form').hide();
-    $('#register-form').fadeIn('fast');
-  }
+  $('#login-form').toggle(!newUserViewMode);
+  $('#register-form').toggle(newUserViewMode);
 }
 
+function setViewMode(value) {
+  newUserViewMode = value;
+  $('#already-registered').toggleClass('checked', !newUserViewMode);
+  $('#new-user').toggleClass('checked', newUserViewMode);
+}
 function resetPageState() {
-  var newUser = getUrlParameters()['new'] == 'true';
-  $('#already-registered').prop('checked', !newUser);
-  $('#new-user').prop('checked', newUser);
+  setViewMode(getUrlParameters()['new'] == 'true');
   updateFormShown();
+}
+
+function modeSwitched() {
+  onTheFlyValidationEnabled = false;
+  var allErrorPlaceholders = $('.error-placeholder');
+  allErrorPlaceholders.text('');
+  allErrorPlaceholders.hide();
+  updateFormShown();
+  history.pushState({}, '', '?new=' + newUserViewMode);
 }
 
 $(document).ready(function () {
   $('#login-form').submit(function (e) {
     e.preventDefault();
+    $('#global-error-placeholder').text('');
 
-    if (validateLoginForm()) {
+    if (validateLoginForm(false)) {
       submitFormAndGoHome(AJAX_LOGIN, $('#login-form'));
     }
     onTheFlyValidationEnabled = true;
   });
   $('#login-user-name, #login-password').on('input', function () {
     if (onTheFlyValidationEnabled) {
-      validateLoginForm();
+      validateLoginForm(true);
     }
   });
   $('#register-form').submit(function (e) {
     e.preventDefault();
+    $('#global-error-placeholder').text('');
 
-    if (validateRegisterForm()) {
+    if (validateRegisterForm(false)) {
       submitFormAndGoHome(AJAX_REGISTER, $('#register-form'));
     }
     onTheFlyValidationEnabled = true;
   });
   $('#register-user-name, #register-password, #register-repeat-password').on('input', function() {
     if (onTheFlyValidationEnabled) {
-      validateRegisterForm();
+      validateRegisterForm(true);
     }
   });
-  $('#already-registered').prop('checked', true);
-  $('#new-user').prop('checked', false);
-
-  $('#already-registered, #new-user').change(function() {
-    onTheFlyValidationEnabled = false;
-    $('input+span').text('');
-    $('#error-placeholder').text('');
-    updateFormShown();
-    history.pushState({}, '', '?new=' + $('#new-user').is(':checked'));
+  $('#already-registered').mousedown(function () {
+    setViewMode(false);
+    modeSwitched();
+  });
+  $('#new-user').mousedown(function () {
+    setViewMode(true);
+    modeSwitched();
   });
   $(window).bind('popstate', resetPageState);
   resetPageState();

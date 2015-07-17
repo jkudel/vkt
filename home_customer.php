@@ -3,7 +3,7 @@
 <div>
   <h1><?= msg('orders') ?></h1>
 
-  <div><a id="new-order-link" href="#"><?= msg('new.order') ?></a></div>
+  <div><button id="new-order-link" class="button"><?= msg('new.order') ?></button></div>
 
   <form id="new-order-form" action="#" method="POST" class="hidden">
     <div class="field">
@@ -18,15 +18,15 @@
     </div>
     <div id="new-order-error-placeholder" class="error-placeholder"></div>
     <div class="field">
-      <input type="submit" value="<?= msg('new.order') ?>"/>
-      <input id="new-order-cancel" type="button" value="<?= msg('cancel') ?>"/>
+      <input class="button" type="submit" value="<?= msg('new.order') ?>"/>
+      <input class="button" id="new-order-cancel" type="button" value="<?= msg('cancel') ?>"/>
     </div>
   </form>
-  <!--suppress HtmlFormInputWithoutLabel -->
-  <select id="view-mode">
-    <option value="waiting"><?= msg('view.mode.waiting') ?></option>
-    <option value="done"><?= msg('view.mode.done') ?></option>
-  </select>
+
+  <div>
+    <button id="view-mode-wa" class="toggle"><?= msg('view.mode.waiting') ?></button>
+    <button class="toggle"><?= msg('view.mode.done') ?></button>
+  </div>
 
   <div><a href="#" id="refresh-waiting-orders" class="hidden"><?= msg('refresh') ?></a></div>
 

@@ -11,5 +11,5 @@ $balance = $userInfo['balance'];
   <?php if ($role == ROLE_EXECUTOR) { ?>
     <div><?= msg('current.balance') ?>: <span id="balance"><?= $balance ?></span></div><?php
   } ?>
-  <div><a href="logout.php"><?= msg('exit') ?></a></div>
+  <div><a class="button" href="logout.php"><?= msg('exit') ?></a></div>
 </header>
