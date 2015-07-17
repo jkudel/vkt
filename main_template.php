@@ -5,6 +5,7 @@
   <title><?= $title ?></title>
   <link rel="stylesheet" href="styles.css" type="text/css"/>
   <script type="text/javascript" src="jquery.min.js"></script>
+  <script type="text/javascript" src="moment.min.js"></script>
   <script type="text/javascript">
     var messages = {<?php printJsArrayContent(MESSAGES); ?>};
     var commonConstants = {<?php printJsArrayContent(COMMON_CONSTANTS); ?>};
@@ -13,6 +14,6 @@
   <script type="text/javascript" src="ajax_requests.js"></script>
 </head>
 <body>
-<?= $content ?>
+<div class="content"><?= $content ?></div>
 </body>
 </html>

@@ -150,9 +150,39 @@ function buildHtmlForOrdersList(list) {
   return builder.join('');
 }
 
+function doGetPresentableTime(date) {
+  var now = moment.utc();
+
+  if (date.isAfter(now)) {
+    return "just now";
+  }
+  if (now.diff(date, 'days') > 13) {
+    if (now.get('year') === date.get('year')) {
+      return date.format("[on] D.MM");
+    } else {
+      return date.format("[on] D.MM.YYYY");
+    }
+  }
+  return date.fromNow();
+}
+
+function getPresentableTime(time) {
+  moment.locale('ru');
+  var mt = time ? moment.unix(time) : '';
+  var presentableTime = mt ? doGetPresentableTime(mt) : '';
+  var timeTooltip = mt ? mt.format("H:mm D.MM.YYYY") : '';
+  return [presentableTime, timeTooltip];
+}
+
 function buildBaseOrderBlock(data, showProfit) {
   var time = data['time'];
-  var presentableTime = time ? new Date(time * 1000).toLocaleString() : '';
+  var pair = getPresentableTime(time);
+  var presentableTime = pair[0];
+  var timeTooltip = pair[1];
+
+  if (timeTooltip == presentableTime) {
+    timeTooltip = '';
+  }
   var html = '<div>' + data['description'] + '</div>';
 
   if (data['price']) {
@@ -161,7 +191,8 @@ function buildBaseOrderBlock(data, showProfit) {
   if (showProfit && data['profit']) {
     html += '<div>' + msg('profit') + ': ' + data['profit'] + '</div>';
   }
-  return html + '<div>' + msg('order.publish.time') + ': ' + presentableTime + '</div>';
+  return html + '<div>' + msg('order.publish.time') + ': <span title="' +
+    timeTooltip + '">' + presentableTime + '</span></div>';
 }
 
 function clearErrors() {

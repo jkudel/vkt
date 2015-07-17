@@ -103,12 +103,19 @@ function clearNewOrderFields() {
 buildOrderBlockInFeed = function (data) {
   var html = buildBaseOrderBlock(data, false);
   var doneTime = data['done_time'];
-  var presentableDoneTime = doneTime ? new Date(doneTime * 1000).toLocaleString() : '';
+  var pair = getPresentableTime(doneTime);
+  var presentableDoneTime = pair[0];
+  var timeTooltip = pair[1];
+
+  if (timeTooltip == presentableDoneTime) {
+    timeTooltip = '';
+  }
   var executor = data['executor'];
 
   if (doneTime && executor) {
     html += '<div>' + msg('executor') + ': ' + executor + '</div>';
-    html += '<div>' + msg('order.execution.time') + ': ' + presentableDoneTime + '</div>';
+    html += '<div>' + msg('order.execution.time') + ': <span title="' +
+    timeTooltip + '">' + presentableDoneTime + '</span></div>';
   } else {
     html +=
       '<div>' +
