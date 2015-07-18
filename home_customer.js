@@ -18,14 +18,23 @@ function loadOrdersForCustomer(reload, count) {
   });
 }
 
-function cancelOrder(orderId, orderBlock, errorPlaceholder) {
+function cancelOrder(orderId, orderBlock, link) {
+  var errorPlaceholder = link.prevAll('.error-placeholder');
+  link.before('<div class="progress"></div>');
+  var progress = link.prevAll('.progress');
+  initProgress(progress);
+
   ajaxCancelOrder(orderId, function () {
+    progress.remove();
     removeOrderBlock(orderBlock, orderId);
     loadOrdersForCustomer(false, 1);
   }, function (errorMessage, errorCode) {
+    progress.remove();
+
     if (errorCode == ERROR_CODE_NO_OBJECT) {
       errorMessage = msg('already.executed.error');
     }
+    errorPlaceholder.show();
     errorPlaceholder.text(errorMessage);
   });
 }
@@ -151,8 +160,7 @@ $(document).ready(function () {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    cancelOrder(link.data('order-id'), link.parents('.order'),
-      link.prev('.error-placeholder'));
+    cancelOrder(link.data('order-id'), link.parents('.order'), link);
   });
 
   $('#new-order-button').click(function (e) {

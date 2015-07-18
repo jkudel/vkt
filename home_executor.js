@@ -36,8 +36,14 @@ function loadNewWaitingOrders() {
   });
 }
 
-function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
+function executeOrder(orderId, price, orderBlock, link) {
+  var errorPlaceholder = link.prevAll('.error-placeholder');
+  link.before('<div class="progress"></div>');
+  var progress = link.prevAll('.progress');
+  initProgress(progress);
+
   ajaxExecuteOrder(orderId, function () {
+    progress.remove();
     var balanceElement = $('#balance');
     var delta = (parseFloat(price) * (1 - getCommonConstant('commission')));
     var newBalance = parseFloat(balanceElement.text()) + delta;
@@ -45,6 +51,8 @@ function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
     removeOrderBlock(orderBlock, orderId);
     loadOrdersForExecutor(false, 1);
   }, function (errorMessage, errorCode) {
+    progress.remove();
+
     if (errorCode == ERROR_CODE_NO_OBJECT) {
       errorMessage = msg('order.canceled.error');
     }
@@ -150,8 +158,7 @@ $(document).ready(function () {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    var orderBlock = link.parent().parent();
-    executeOrder(link.data('order-id'), link.data('order-price'), orderBlock, link.prev('.error-placeholder'));
+    executeOrder(link.data('order-id'), link.data('order-price'), link.parents('.order'), link);
   });
   $('#show-more').click(function (e) {
     e.preventDefault();

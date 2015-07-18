@@ -2,6 +2,13 @@
   display: none;
 }
 
+.progress {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  background: url("img/ajax-loader.gif");
+}
+
 .button, .toggle {
   text-decoration: none;
   padding: 0.5em 1em;
@@ -258,12 +265,20 @@ header .current-user-info > div {
 .order .bottom-panel .action-panel {
   display: inline-block;
   width: 50%;
-  vertical-align: bottom;
   text-align: right;
+  vertical-align: bottom;
+}
+
+.order .bottom-panel .action-panel .progress {
+  vertical-align: middle;
 }
 
 .order .bottom-panel .action-panel .error-placeholder {
-  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.order .bottom-panel .action-panel .button {
+  margin-left: 10px;
 }
 
 .order .bottom-panel .params {

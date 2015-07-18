@@ -69,3 +69,11 @@ function escapeHtml(string) {
 function escapeMultiLineString(s) {
   return escapeHtml(s).replace(/(?:\r\n|\r|\n)/g, '<br/>');
 }
+
+function initProgress(element) {
+  element.hide();
+
+  setTimeout(function () {
+    element.show();
+  }, 500);
+}
