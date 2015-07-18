@@ -1,36 +1,43 @@
-<?php include 'home_header.php'; ?>
-<script type="text/javascript" src="home_customer.js"></script>
-<div>
-  <h1><?= msg('orders') ?></h1>
-
-  <div><button id="new-order-link" class="button"><?= msg('new.order') ?></button></div>
-
-  <form id="new-order-form" action="#" method="POST" class="hidden">
-    <div class="field">
-      <label for="new-order-description"><?= msg('description') ?>:</label><br/>
-      <textarea name="description" id="new-order-description"></textarea><br/>
-      <span class="error-placeholder"></span>
-    </div>
-    <div class="field">
-      <label for="new-order-price"><?= msg('price') ?> (<?= msg('currency') ?>):</label><br/>
-      <input id="new-order-price" name="price" autocomplete="off"/><br/>
-      <span class="error-placeholder"></span>
-    </div>
-    <div id="new-order-error-placeholder" class="error-placeholder"></div>
-    <div class="field">
-      <input class="button" type="submit" value="<?= msg('new.order') ?>"/>
-      <input class="button" id="new-order-cancel" type="button" value="<?= msg('cancel') ?>"/>
-    </div>
-  </form>
-
+<div class="home-content customer">
+  <?php include 'home_header.php'; ?>
+  <script type="text/javascript" src="home_customer.js"></script>
   <div>
-    <button id="view-mode-wa" class="toggle"><?= msg('view.mode.waiting') ?></button>
-    <button class="toggle"><?= msg('view.mode.done') ?></button>
+    <div class="hidden">
+      <form id="new-order-form" action="#" method="POST" class="new-order-form">
+        <div class="field">
+          <label for="new-order-description"><?= msg('description') ?>:</label>
+          <textarea id="new-order-description" class="fill" name="description" rows="7"
+                    maxlength="<?= getCommonConstant('description.max.length') ?>"></textarea>
+
+          <div class="error-placeholder"></div>
+        </div>
+        <div class="field">
+          <label for="new-order-price"><?= msg('price') ?> (<?= msg('currency') ?>):</label>
+          <input id="new-order-price" class="fill" name="price" autocomplete="off"/>
+
+          <div class="error-placeholder"></div>
+        </div>
+        <div id="new-order-error-placeholder" class="error-placeholder"></div>
+        <div class="field last">
+          <input class="button" type="submit" value="<?= msg('new.order') ?>"/>
+          <input class="button" id="new-order-cancel" type="button" value="<?= msg('cancel') ?>"/>
+        </div>
+      </form>
+    </div>
+
+    <div id="view-mode">
+      <a href="?view-mode=waiting" class="toggle"><?= msg('view.mode.waiting') ?></a>
+      <a href="?view-mode=done" class="toggle"><?= msg('view.mode.done') ?></a>
+    </div>
+
+    <div class="orders-panel">
+      <div class="show-new-panel"><span id="refresh-waiting-orders" class="in-feed-link hidden"><?= msg('refresh') ?></span></div>
+
+      <div id="main-error-placeholder" class="error-placeholder"></div>
+      <div id="orders" class="orders"></div>
+      <div class="show-more-panel"><span id="show-more" class="in-feed-link hidden"><?= msg('show.more') ?></span></div>
+    </div>
   </div>
 
-  <div><a href="#" id="refresh-waiting-orders" class="hidden"><?= msg('refresh') ?></a></div>
-
-  <div class="error-placeholder"></div>
-  <div id="orders"></div>
-  <div><a href="#" id="show-more" class="hidden"><?= msg('show.more') ?></a></div>
+  <?php include 'footer.php' ?>
 </div>

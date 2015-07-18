@@ -1,8 +1,11 @@
 const ORDER_LIST_PART_SIZE = 3;
+const VIEW_MODE_PARAM = 'view-mode';
 
 var buildOrderBlockInFeed = null;
+var reloadAll = null;
 var feedOrdersIdSet = {};
 var feedOrders = [];
+var viewMode = null;
 
 function buildParamsOlderThanLastOrder(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
@@ -121,26 +124,6 @@ function removeAllFromFeed() {
   feedOrdersIdSet = {};
 }
 
-function removeOrdersFromFeed(orderIds) {
-  var ordersToRemove = {};
-
-  for (var i = 0; i < orderIds.length; i++) {
-    ordersToRemove[orderIds[i]] = true;
-  }
-  var result = 0;
-
-  $('#orders').children().each(function () {
-    var executeLink = $(this).find('.execute-order-link');
-    var orderId = executeLink.data('order-id');
-
-    if (ordersToRemove[orderId]) {
-      removeOrderBlock($(this), orderId);
-      result++;
-    }
-  });
-  return result;
-}
-
 function buildHtmlForOrdersList(list) {
   var builder = [];
 
@@ -174,7 +157,7 @@ function getPresentableTime(time) {
   return [presentableTime, timeTooltip];
 }
 
-function buildBaseOrderBlock(data, showProfit) {
+function buildBaseOrderBlock(data, showProfit, showExecutor, addToBottomPanel) {
   var time = data['time'];
   var pair = getPresentableTime(time);
   var presentableTime = pair[0];
@@ -183,45 +166,95 @@ function buildBaseOrderBlock(data, showProfit) {
   if (timeTooltip == presentableTime) {
     timeTooltip = '';
   }
-  var html = '<div>' + data['description'] + '</div>';
+  var html = '<div class="description">' + escapeMultiLineString(data['description']) + '</div>';
 
+  html += '<div class="bottom-panel"><div class="params">';
   if (data['price']) {
-    html += '<div>' + msg('price') + ': ' + data['price'] + '</div>';
+    html += '<div class="price">' + msg('price') + ': ' + data['price'] + ' ' + msg('currency') + '</div>';
   }
   if (showProfit && data['profit']) {
-    html += '<div>' + msg('profit') + ': ' + data['profit'] + '</div>';
+    html += '<div class="price">' + msg('profit') + ': ' + data['profit'] + ' ' + msg('currency') + '</div>';
   }
-  return html + '<div>' + msg('order.publish.time') + ': <span title="' +
+  html += '<div class="publish-time">' + msg('order.publish.time') + ': <span title="' +
     timeTooltip + '">' + presentableTime + '</span></div>';
+  var doneTime = data['done_time'];
+
+  if (doneTime) {
+    pair = getPresentableTime(doneTime);
+    presentableTime = pair[0];
+    timeTooltip = pair[1];
+
+    if (timeTooltip == presentableTime) {
+      timeTooltip = '';
+    }
+    if (showExecutor) {
+      var executor = data['executor'];
+      html += '<div>' + msg('executor') + ': ' + executor + '</div>';
+    }
+    html += '<div>' + msg('order.execution.time') + ': <span title="' +
+    timeTooltip + '">' + presentableTime + '</span></div>';
+  }
+  html += '</div>';
+
+  if (addToBottomPanel) {
+    html += addToBottomPanel;
+  }
+  return '<div class="order">' + html + '</div></div>';
 }
 
 function clearErrors() {
-  $('.error-placeholder').text('');
+  var placeholders = $('.error-placeholder');
+  placeholders.text('');
+  placeholders.hide();
 }
 
-function updateSelectedViewMode(selector, defaultMode) {
-  var defaultIfExecutedVal = getUrlParameters()['view-mode'];
+function getViewModeByLink(linkElement) {
+  return paramsStrToObject(linkElement.attr('href'))[VIEW_MODE_PARAM];
+}
 
-  if (!defaultIfExecutedVal) {
-    defaultIfExecutedVal = defaultMode;
+function updateViewModeButtons() {
+  $('#view-mode').find('a').each(function () {
+    var mode = getViewModeByLink($(this));
+    $(this).toggleClass('checked', mode == viewMode);
+  });
+}
+
+function chooseViewModeFromUrl(defaultMode) {
+  var mode = getUrlParameters()[VIEW_MODE_PARAM];
+
+  if (!mode) {
+    mode = defaultMode;
   }
-  selector.val(defaultIfExecutedVal);
+  chooseViewMode(mode, false);
 }
 
-function initViewModeChooser(defaultViewMode, reloadFunc) {
-  var viewMode = $('#view-mode');
+function chooseViewMode(mode, pushState) {
+  if (viewMode == mode) {
+    return;
+  }
+  viewMode = mode;
+  updateViewModeButtons();
+  clearErrors();
 
-  viewMode.change(function () {
-    history.pushState({}, '', '?view-mode=' + viewMode.val());
-    clearErrors();
-    reloadFunc();
+  if (pushState) {
+    history.pushState({}, '', '?' + VIEW_MODE_PARAM + '=' + mode);
+  }
+  reloadAll();
+}
+
+function init(defaultViewMode) {
+  var viewModeButtons = $('#view-mode').find('a');
+
+  viewModeButtons.click(function (e) {
+    e.preventDefault();
+    chooseViewMode(getViewModeByLink($(this)), true);
   });
 
   $(window).bind('popstate', function () {
-    updateSelectedViewMode(viewMode, defaultViewMode);
+    chooseViewModeFromUrl(defaultViewMode);
     clearErrors();
-    reloadFunc();
+    reloadAll();
   });
-  updateSelectedViewMode(viewMode, defaultViewMode);
-  return viewMode;
+  chooseViewModeFromUrl(defaultViewMode);
+  return viewModeButtons;
 }

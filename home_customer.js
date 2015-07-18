@@ -2,8 +2,7 @@ function loadOrdersForCustomer(reload, count) {
   if (reload) {
     removeAllFromFeed();
   }
-  var viewMode = $('#view-mode');
-  var done = viewMode.val() == 'done' ? 1 : 0;
+  var done = viewMode == 'done' ? 1 : 0;
   var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
   params['done'] = done;
 
@@ -13,7 +12,9 @@ function loadOrdersForCustomer(reload, count) {
   ajaxGetMyOrders(params, function (response) {
     appendLoadedOrdersToFeed(response);
   }, function (errorMessage) {
-    viewMode.next('.error-placeholder').text(errorMessage);
+    var errorPlaceholder = $('#main-error-placeholder');
+    errorPlaceholder.text(errorMessage);
+    errorPlaceholder.show();
   });
 }
 
@@ -31,34 +32,41 @@ function cancelOrder(orderId, orderBlock, errorPlaceholder) {
 
 function validateNewOrderForm() {
   var description = $('#new-order-description');
+  var result = true;
 
   if (!description.val().trim()) {
-    description.nextAll('span').text(msg('no.description'));
-    return false;
+    var descriptionErrorPlaceholder = description.next('.error-placeholder');
+    descriptionErrorPlaceholder.text(msg('no.description'));
+    descriptionErrorPlaceholder.show();
+    result = false;
   }
   var price = $('#new-order-price');
+  var priceErrorPlaceholder = price.next('.error-placeholder');
 
   if (!price.val()) {
-    price.nextAll('span').text(msg('no.price'));
+    priceErrorPlaceholder.text(msg('no.price'));
+    priceErrorPlaceholder.show();
     return false;
   }
   var floatPrice = parseFloat(price.val());
   var decPrice = isNaN(floatPrice) ? '' : floatPrice.toFixed(2);
 
   if (decPrice.indexOf(price.val()) != 0) {
-    price.nextAll('span').text(msg('price.must.be.number'));
+    priceErrorPlaceholder.text(msg('price.must.be.number'));
+    priceErrorPlaceholder.show();
     return false;
   }
   if (decPrice.indexOf('0') == 0) {
-    price.nextAll('span').text(msg('min.price.error') + ' 1 ' + msg('currency'));
+    priceErrorPlaceholder.text(msg('min.price.error') + ' 1 ' + msg('currency'));
+    priceErrorPlaceholder.show();
     return false;
   }
-  return true;
+  return result;
 }
 
 function scheduleCheckingUpdatesForCustomer() {
   setTimeout(function () {
-    if ($('#view-mode').val() == 'done') {
+    if (viewMode == 'done') {
       loadNewDoneOrders(scheduleCheckingUpdatesForCustomer);
     } else {
       scheduleCheckingUpdatesForCustomer();
@@ -74,21 +82,20 @@ function loadNewDoneOrders(runAfter) {
     prependLoadedOrdersToFeed(response);
     runAfter();
   }, function (errorMessage) {
-    $('#view-mode').next('.error-placeholder').text(errorMessage);
+    $('#main-error-placeholder').text(errorMessage);
     runAfter();
   });
 }
 
 function createOrder(form) {
   ajaxSubmitForm(AJAX_CREATE_ORDER, form, function (response) {
-    $('#new-order-form').hide();
+    $('#new-order-form').parent().hide();
     clearNewOrderFields();
-    var viewModeCombo = $('#view-mode');
 
-    if (viewModeCombo.val() == 'waiting') {
+    if (viewMode == 'waiting') {
       prependOrdersToFeed([response['order']]);
     } else {
-      viewModeCombo.val('waiting').change();
+      chooseViewMode('waiting', true);
     }
   }, function (errorMessage) {
     $('#new-order-error-placeholder').text(errorMessage);
@@ -101,43 +108,36 @@ function clearNewOrderFields() {
 }
 
 buildOrderBlockInFeed = function (data) {
-  var html = buildBaseOrderBlock(data, false);
   var doneTime = data['done_time'];
-  var pair = getPresentableTime(doneTime);
-  var presentableDoneTime = pair[0];
-  var timeTooltip = pair[1];
+  var addToBottomPanel = '';
 
-  if (timeTooltip == presentableDoneTime) {
-    timeTooltip = '';
+  if (!doneTime) {
+    var cancelButton =
+      '<input class="button cancel-order-button" type="button" ' +
+      'data-order-id="' + data['order_id'] + '" ' +
+      'value="'+ msg('cancel.order') +'"/>';
+    addToBottomPanel = '<div class="action-panel""><span class="error-placeholder"></span>' +
+      cancelButton + '</div>';
   }
-  var executor = data['executor'];
+  return buildBaseOrderBlock(data, false, true, addToBottomPanel);
+};
 
-  if (doneTime && executor) {
-    html += '<div>' + msg('executor') + ': ' + executor + '</div>';
-    html += '<div>' + msg('order.execution.time') + ': <span title="' +
-    timeTooltip + '">' + presentableDoneTime + '</span></div>';
-  } else {
-    html +=
-      '<div>' +
-      '  <a class="cancel-order-link" data-order-id="' + data['order_id'] + '" href="#">' + msg('cancel.order') + '</a>' +
-      '  <span class="error-placeholder"></span>' +
-      '</div>';
-  }
-  return '<div>' + html + '</div>';
+reloadAll = function () {
+  loadOrdersForCustomer(true);
 };
 
 function updateRefreshWaitingOrdersButton() {
-  if ($('#view-mode').val() == 'waiting') {
+  if (viewMode == 'waiting') {
     $('#refresh-waiting-orders').show();
   } else {
     $('#refresh-waiting-orders').hide();
   }
 }
+
 $(document).ready(function () {
-  var viewMode = initViewModeChooser('waiting', function () {
-    loadOrdersForCustomer(true);
-  });
-  viewMode.change(function () {
+  var viewModeButtons = init('waiting');
+
+  viewModeButtons.click(function () {
     updateRefreshWaitingOrdersButton();
   });
   updateRefreshWaitingOrdersButton();
@@ -147,21 +147,21 @@ $(document).ready(function () {
     loadOrdersForCustomer(true);
   });
 
-  $('#orders').on('click', '.cancel-order-link', function (e) {
+  $('#orders').on('click', '.cancel-order-button', function (e) {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    var orderBlock = link.parent().parent();
-    cancelOrder(link.data('order-id'), orderBlock, link.next('span'));
+    cancelOrder(link.data('order-id'), link.parents('.order'),
+      link.prev('.error-placeholder'));
   });
 
-  $('#new-order-link').click(function (e) {
+  $('#new-order-button').click(function (e) {
     e.preventDefault();
-    $('#new-order-form').fadeIn();
+    $('#new-order-form').parent().slideDown('fast');
     clearErrors();
   });
   $('#new-order-cancel').click(function () {
-    $('#new-order-form').fadeOut();
+    $('#new-order-form').parent().slideUp('fast');
     clearNewOrderFields();
     clearErrors();
   });
@@ -177,6 +177,5 @@ $(document).ready(function () {
     e.preventDefault();
     loadOrdersForCustomer(false);
   });
-  loadOrdersForCustomer(false);
   scheduleCheckingUpdatesForCustomer();
 });

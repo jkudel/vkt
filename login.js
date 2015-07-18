@@ -117,8 +117,8 @@ function submitFormAndGoHome(url, form) {
 }
 
 function updateFormShown() {
-  $('#login-form').toggle(!newUserViewMode);
-  $('#register-form').toggle(newUserViewMode);
+  $('#login-form').parent().toggle(!newUserViewMode);
+  $('#register-form').parent().toggle(newUserViewMode);
 }
 
 function setViewMode(value) {

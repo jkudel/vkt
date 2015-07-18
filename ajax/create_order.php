@@ -13,6 +13,11 @@ if ($description == '') {
   validationErrorResponse(msg('no.description'));
   return;
 }
+$descriptionMaxLength = getCommonConstant('description.max.length');
+
+if (mb_strlen($description) > $descriptionMaxLength) {
+  validationErrorResponse(msg('description.length.error', $descriptionMaxLength));
+}
 $price = floatval(getIfExists($_POST, 'price'));
 
 if ($price < 1) {

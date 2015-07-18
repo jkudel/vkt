@@ -19,7 +19,7 @@ INSERT INTO sequences VALUES ();
 CREATE TABLE waiting_orders (
   order_id    INT UNSIGNED            NOT NULL AUTO_INCREMENT PRIMARY KEY,
   customer_id INT UNSIGNED            NOT NULL,
-  description VARCHAR(200)            NOT NULL,
+  description VARCHAR(300)            NOT NULL,
   price       DECIMAL(10, 2) UNSIGNED NOT NULL,
   time        BIGINT UNSIGNED         NOT NULL,
   INDEX (order_id, customer_id),
@@ -33,7 +33,7 @@ CREATE TABLE waiting_orders (
 CREATE TABLE done_orders_for_customer (
   order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
-  description VARCHAR(200)            NOT NULL,
+  description VARCHAR(300)            NOT NULL,
   price       DECIMAL(10, 2) UNSIGNED NOT NULL,
   time        BIGINT UNSIGNED         NOT NULL,
   executor_id INT UNSIGNED            NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE done_orders_for_customer (
 CREATE TABLE done_orders_for_executor (
   order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
-  description VARCHAR(200)            NOT NULL,
+  description VARCHAR(300)            NOT NULL,
   profit      DECIMAL(10, 2) UNSIGNED NOT NULL,
   time        BIGINT UNSIGNED         NOT NULL,
   executor_id INT UNSIGNED            NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE expiration_times (
 CREATE TABLE feed_cache (
   order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
-  description VARCHAR(200)            NOT NULL,
+  description VARCHAR(300)            NOT NULL,
   price       DECIMAL(10, 2) UNSIGNED NOT NULL,
   time        BIGINT UNSIGNED         NOT NULL,
   PRIMARY KEY (order_id, customer_id)

@@ -2,15 +2,16 @@ function loadOrdersForExecutor(reload, count) {
   if (reload) {
     removeAllFromFeed();
   }
-  var viewMode = $('#view-mode');
 
   var successCallback = function (response) {
     appendLoadedOrdersToFeed(response);
   };
   var errorCallback = function (errorMessage) {
-    viewMode.next('.error-placeholder').text(errorMessage);
+    var errorPlaceholder = $('#main-error-placeholder');
+    errorPlaceholder.text(errorMessage);
+    errorPlaceholder.show();
   };
-  var done = viewMode.val() == 'done';
+  var done = viewMode == 'done';
   var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
 
   if (count) {
@@ -31,7 +32,7 @@ function loadNewWaitingOrders() {
     $('#show-new-orders').hide();
     prependLoadedOrdersToFeed(response);
   }, function (errorMessage) {
-    $('#view-mode').next('.error-placeholder').text(errorMessage);
+    $('#main-error-placeholder').text(errorMessage);
   });
 }
 
@@ -48,11 +49,12 @@ function executeOrder(orderId, price, orderBlock, errorPlaceholder) {
       errorMessage = msg('order.canceled.error');
     }
     errorPlaceholder.text(errorMessage);
+    errorPlaceholder.show();
   });
 }
 
 function applyUpdates(response) {
-  if ($('#view-mode').val() != 'available') {
+  if (viewMode != 'available') {
     return;
   }
   var newOrdersCount = response['new_orders_count'];
@@ -82,9 +84,29 @@ function applyUpdates(response) {
   }
 }
 
+function removeOrdersFromFeed(orderIds) {
+  var ordersToRemove = {};
+
+  for (var i = 0; i < orderIds.length; i++) {
+    ordersToRemove[orderIds[i]] = true;
+  }
+  var result = 0;
+
+  $('#orders').children().each(function () {
+    var executeButton = $(this).find('.execute-order-button');
+    var orderId = executeButton.data('order-id');
+
+    if (ordersToRemove[orderId]) {
+      removeOrderBlock($(this), orderId);
+      result++;
+    }
+  });
+  return result;
+}
+
 function scheduleCheckingUpdatesForExecutor() {
   setTimeout(function () {
-    if ($('#view-mode').val() != 'available') {
+    if (viewMode != 'available') {
       scheduleCheckingUpdatesForExecutor();
       return;
     }
@@ -94,40 +116,42 @@ function scheduleCheckingUpdatesForExecutor() {
       applyUpdates(response);
       scheduleCheckingUpdatesForExecutor();
     }, function (errorMessage) {
-      $('#view-mode').next('.error-placeholder').text(errorMessage);
+      var errorPlaceholder = $('#main-error-placeholder');
+      errorPlaceholder.text(errorMessage);
+      errorPlaceholder.show();
       scheduleCheckingUpdatesForExecutor();
     });
   }, 5000);
 }
 
 buildOrderBlockInFeed = function(data) {
-  var html = buildBaseOrderBlock(data, true);
+  var addToBottomPanel = '';
 
-  if (data['done_time']) {
-    return html;
+  if (!data['done_time']) {
+    var executeButton =
+      '<input class="button execute-order-button" type="button" ' +
+      'data-order-id="' + data['order_id'] + '" ' +
+      'data-order-price="' + data['price'] + '" ' +
+      'value="'+ msg('execute.order') +'"/>';
+    addToBottomPanel = '<div class="action-panel"><span class="error-placeholder"></span>' +
+    executeButton + '</div>';
   }
-  var executeButton =
-    '<a class="execute-order-link" href="#" ' +
-    'data-order-id="' + data['order_id'] + '" ' +
-    'data-order-price="' + data['price'] + '">' +
-    msg('execute.order') + '</a>';
-  return '<div>' + html +
-    '<div>' +
-    executeButton +
-    '<span class="error-placeholder"></span>' +
-    '</div></div>';
+  return buildBaseOrderBlock(data, true, false, addToBottomPanel);
+};
+
+reloadAll = function () {
+  loadOrdersForExecutor(true);
 };
 
 $(document).ready(function () {
-  initViewModeChooser('available', function () {
-    loadOrdersForExecutor(true);
-  });
-  $('#orders').on('click', '.execute-order-link', function (e) {
+  init('available');
+
+  $('#orders').on('click', '.execute-order-button', function (e) {
     e.preventDefault();
     clearErrors();
     var link = $(this);
     var orderBlock = link.parent().parent();
-    executeOrder(link.data('order-id'), link.data('order-price'), orderBlock, link.next('span'));
+    executeOrder(link.data('order-id'), link.data('order-price'), orderBlock, link.prev('.error-placeholder'));
   });
   $('#show-more').click(function (e) {
     e.preventDefault();
@@ -137,6 +161,5 @@ $(document).ready(function () {
     e.preventDefault();
     loadNewWaitingOrders();
   });
-  loadOrdersForExecutor(false);
   scheduleCheckingUpdatesForExecutor();
 });

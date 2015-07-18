@@ -19,9 +19,15 @@ function getUrlParameters() {
   return parametersStr != null && parametersStr != "" ? paramsStrToObject(parametersStr) : {};
 }
 
-function paramsStrToObject(parametersStr) {
+function paramsStrToObject(s) {
+  if (s.length == 0) {
+    return {};
+  }
+  if (s.charAt(0) == '?') {
+    s = s.substr(1);
+  }
   var result = {};
-  var params = parametersStr.split("&");
+  var params = s.split("&");
 
   for (var i = 0; i < params.length; i++) {
     var t = params[i].split("=");
@@ -43,4 +49,23 @@ function buildParamsStr(paramsMap) {
   }
   var s = builder.join("&");
   return s.length == 0 ? s : '?' + s;
+}
+
+const ENTITY_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  '\'': '&#39;',
+  '/': '&#x2F;'
+};
+
+function escapeHtml(string) {
+  return String(string).replace(/[&<>"'\/]/g, function (s) {
+    return ENTITY_MAP[s];
+  });
+}
+
+function escapeMultiLineString(s) {
+  return escapeHtml(s).replace(/(?:\r\n|\r|\n)/g, '<br/>');
 }

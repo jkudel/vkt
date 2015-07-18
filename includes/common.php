@@ -15,7 +15,8 @@ const COMMON_CONSTANTS = [
   'commission' => 0.1,
   'user.name.max.length' => 20,
   'password.min.length' => 4,
-  'password.max.length' => 20
+  'password.max.length' => 20,
+  'description.max.length' => 300
 ];
 
 const ROLE_EXECUTOR = 0;
