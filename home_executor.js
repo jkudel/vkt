@@ -1,13 +1,17 @@
 var autoUpdateEnabled = true;
 var autoUpdateCanceled = false;
 
-function loadNewWaitingOrders() {
+function loadNewWaitingOrders(element) {
+  element.after('<div class="progress"></div>');
+  var progress = initProgress(element.next());
   var params = buildParamsNewerThanFirstOrder('time');
 
   ajaxGetWaitingOrders(params, function (response) {
-    $('#show-new-orders').hide();
+    element.hide();
+    progress.remove();
     prependLoadedOrdersToFeed(response);
   }, function (errorMessage) {
+    progress.remove();
     $('#main-error-placeholder').text(errorMessage);
   });
 }
@@ -179,7 +183,7 @@ $(document).ready(function () {
   });
   $('#show-new-orders').click(function (e) {
     e.preventDefault();
-    loadNewWaitingOrders();
+    loadNewWaitingOrders($(this));
   });
   scheduleCheckingUpdatesForExecutor();
 });
