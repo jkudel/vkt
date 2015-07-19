@@ -1,5 +1,3 @@
-const ERROR_CODE_NO_OBJECT = 3;
-
 function msg() {
   var key = arguments[0];
   var args = Array.prototype.slice.call(arguments, 1);
@@ -70,19 +68,11 @@ function escapeMultiLineString(s) {
   return escapeHtml(s).replace(/(?:\r\n|\r|\n)/g, '<br/>');
 }
 
-function initProgress(element, useVisibilityProp) {
-  if (useVisibilityProp) {
-    element.css('visibility', 'hidden');
-  } else {
-    element.hide();
-  }
+function initProgress(element) {
+  element.hide();
 
   setTimeout(function () {
-    if (useVisibilityProp) {
-      element.css('visibility', 'visible');
-    } else {
-      element.show();
-    }
+    element.show();
   }, 500);
   return element;
 }

@@ -10,6 +10,7 @@
     <div class="show-new-panel"><span id="show-new-orders" class="in-feed-link hidden"></span></div>
     <div class="orders" id="orders"></div>
     <div class="show-more-panel"><span class="in-feed-link hidden" id="show-more"><?= msg('show.more') ?></span></div>
+    <div id="bottom-error-placeholder" class="error-placeholder"></div>
   </div>
   <?php include 'footer.php' ?>
 </div>

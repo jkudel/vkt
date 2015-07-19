@@ -1,11 +1,15 @@
 const ORDER_LIST_PART_SIZE = 3;
 const VIEW_MODE_PARAM = 'view-mode';
 
+const ERROR_CODE_NO_OBJECT = 3;
+
 var buildOrderBlockInFeed = null;
-var reload = null;
+var loadOrders = null;
 var feedOrdersIdSet = {};
 var feedOrders = [];
 var viewMode = null;
+var feedActionsQueue = [];
+var executingFeedActionInfo = null;
 
 function buildParamsOlderThanLastOrder(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
@@ -119,6 +123,7 @@ function removeOrderBlock(selector, orderId) {
 }
 
 function removeAllFromFeed() {
+  $('#show-more').hide();
   $('#orders').html('');
   feedOrders = [];
   feedOrdersIdSet = {};
@@ -176,7 +181,7 @@ function buildBaseOrderBlock(data, showProfit, showExecutor, addToBottomPanel) {
     html += '<div class="price">' + msg('profit') + ': ' + data['profit'] + ' ' + msg('currency') + '</div>';
   }
   html += '<div class="publish-time">' + msg('order.publish.time') + ': <span title="' +
-    timeTooltip + '">' + presentableTime + '</span></div>';
+  timeTooltip + '">' + presentableTime + '</span></div>';
   var doneTime = data['done_time'];
 
   if (doneTime) {
@@ -239,18 +244,93 @@ function chooseViewMode(mode, pushState) {
   if (pushState) {
     history.pushState({}, '', '?' + VIEW_MODE_PARAM + '=' + mode);
   }
-  reloadUnderProgress();
+  fullReloadUnderProgress();
 }
 
-function reloadUnderProgress() {
-  $('#show-more').hide();
-  var mode = $('#view-mode');
-  mode.after('<div class="progress big"></div>');
-  var progress = initProgress(mode.next(), true);
+function fullReloadUnderProgress(progress) {
+  cancelAllFeedActions();
+  loadUnderProgress(true, null, null, progress);
+}
 
-  reload(true, null, null, function() {
-    progress.remove();
+function loadUnderProgress(reload, count, errorPlaceholder, progress) {
+  if (!progress) {
+    var ordersPanel = $('.orders-panel');
+    progress = ordersPanel.next('.progress');
+
+    if (progress.length == 0) {
+      ordersPanel.after('<div class="progress big bottom"></div>');
+      progress = initProgress(ordersPanel.next());
+    } else {
+      var counter = progress.data('counter');
+      progress.data('counter', (counter ? parseInt(counter) + 1 : 1));
+    }
+  }
+  var finished = function () {
+    var counter = progress.data('counter');
+    var c = counter ? parseInt(counter) : 0;
+
+    if (c == 0) {
+      progress.remove();
+    } else {
+      progress.data('counter', c - 1);
+    }
+  };
+  scheduleFeedAction(function (runAfter, canceledFunc) {
+    if (!canceledFunc()) {
+      loadOrders(reload, count, errorPlaceholder, canceledFunc, function () {
+        finished();
+        runAfter();
+      });
+    }
+  }, finished);
+}
+
+function cancelAllFeedActions() {
+  if (executingFeedActionInfo) {
+    executingFeedActionInfo.canceled = true;
+    executingFeedActionInfo.cancel();
+
+    for (var i = 0; i < feedActionsQueue.length; i++) {
+      var actionInfo = feedActionsQueue[i];
+      actionInfo.canceled = true;
+      actionInfo.cancel();
+    }
+    feedActionsQueue = [];
+    executingFeedActionInfo = null;
+  }
+}
+
+function executeAction(actionInfo) {
+  actionInfo.action(function () {
+    executeNextFeedActionLater();
+  }, function () {
+    return actionInfo.canceled;
   });
+}
+
+function executeNextFeedActionLater() {
+  setTimeout(function () {
+    if (feedActionsQueue.length > 0) {
+      var actionInfo = feedActionsQueue.shift();
+      executingFeedActionInfo = actionInfo;
+      executeAction(actionInfo);
+    } else {
+      executingFeedActionInfo = null;
+    }
+  }, 100)
+}
+
+function scheduleFeedAction(action, cancel) {
+  var actionInfo = {action: action, cancel: cancel};
+
+  setTimeout(function () {
+    if (!executingFeedActionInfo) {
+      executingFeedActionInfo = actionInfo;
+      executeAction(actionInfo);
+    } else {
+      feedActionsQueue.push(actionInfo);
+    }
+  }, 100);
 }
 
 function init(defaultViewMode) {
@@ -272,13 +352,8 @@ function init(defaultViewMode) {
 $(document).ready(function () {
   $('#show-more').click(function (e) {
     e.preventDefault();
-    var showMoreLink = $(this);
-    showMoreLink.after('<div class="progress"></div>');
-    var progress = initProgress(showMoreLink.next());
-    var errorPlaceholder = showMoreLink.nextAll('.error-placeholder');
-
-    reload(false, null, errorPlaceholder, function() {
-      progress.remove();
-    });
+    $(this).hide();
+    var errorPlaceholder = $('#bottom-error-placeholder');
+    loadUnderProgress(false, null, errorPlaceholder);
   });
 });

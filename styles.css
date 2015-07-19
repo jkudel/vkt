@@ -10,10 +10,10 @@
 }
 
 .progress.big {
-  margin-top: 20px;
   background: url("img/progress-indicator-big.gif");
   width: 32px;
   height: 32px;
+  margin-bottom: 20px;
 }
 
 .button, .toggle {

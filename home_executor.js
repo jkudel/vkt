@@ -1,42 +1,79 @@
-var autoUpdateEnabled = true;
-var autoUpdateCanceled = false;
+function loadNewWaitingOrders(showNewLink) {
+  var progress = showNewLink.next('.progress');
 
-function loadNewWaitingOrders(element) {
-  element.after('<div class="progress"></div>');
-  var progress = initProgress(element.next());
+  if (progress.length > 0) {
+    return;
+  }
+  showNewLink.after('<div class="progress"></div>');
+  progress = initProgress(showNewLink.next());
   var params = buildParamsNewerThanFirstOrder('time');
 
-  ajaxGetWaitingOrders(params, function (response) {
-    element.hide();
+  scheduleFeedAction(function (runAfter, canceledFunc) {
+    if (canceledFunc()) {
+      return;
+    }
+    ajaxGetWaitingOrders(params, function (response) {
+      if (canceledFunc()) {
+        return;
+      }
+      progress.remove();
+      showNewLink.hide();
+      prependLoadedOrdersToFeed(response);
+      runAfter();
+    }, function (errorMessage) {
+      if (canceledFunc()) {
+        return;
+      }
+      progress.remove();
+      $('#main-error-placeholder').text(errorMessage);
+      runAfter();
+    });
+  }, function () {
     progress.remove();
-    prependLoadedOrdersToFeed(response);
-  }, function (errorMessage) {
-    progress.remove();
-    $('#main-error-placeholder').text(errorMessage);
   });
 }
 
 function executeOrder(orderId, price, orderBlock, link) {
   var errorPlaceholder = link.prevAll('.error-placeholder');
+  var progress = link.prev('.progress');
+
+  if (progress.length > 0) {
+    return;
+  }
   link.before('<div class="progress"></div>');
-  var progress = initProgress(link.prev());
+  progress = initProgress(link.prev());
 
-  ajaxExecuteOrder(orderId, function () {
-    progress.remove();
-    var balanceElement = $('#balance');
-    var delta = (parseFloat(price) * (1 - getCommonConstant('commission')));
-    var newBalance = parseFloat(balanceElement.text()) + delta;
-    balanceElement.text(newBalance.toFixed(2));
-    removeOrderBlock(orderBlock, orderId);
-    reload(false, 1);
-  }, function (errorMessage, errorCode) {
-    progress.remove();
-
-    if (errorCode == ERROR_CODE_NO_OBJECT) {
-      errorMessage = msg('order.canceled.error');
+  scheduleFeedAction(function (runAfter, canceledFunc) {
+    if (canceledFunc()) {
+      return;
     }
-    errorPlaceholder.text(errorMessage);
-    errorPlaceholder.show();
+    ajaxExecuteOrder(orderId, function () {
+      if (canceledFunc()) {
+        return;
+      }
+      progress.remove();
+      var balanceElement = $('#balance');
+      var delta = (parseFloat(price) * (1 - getCommonConstant('commission')));
+      var newBalance = parseFloat(balanceElement.text()) + delta;
+      balanceElement.text(newBalance.toFixed(2));
+      removeOrderBlock(orderBlock, orderId);
+      loadUnderProgress(false, 1);
+      runAfter();
+    }, function (errorMessage, errorCode) {
+      if (canceledFunc()) {
+        return;
+      }
+      progress.remove();
+
+      if (errorCode == ERROR_CODE_NO_OBJECT) {
+        errorMessage = msg('order.canceled.error');
+      }
+      errorPlaceholder.text(errorMessage);
+      errorPlaceholder.show();
+      runAfter();
+    });
+  }, function () {
+    progress.remove();
   });
 }
 
@@ -66,7 +103,7 @@ function applyUpdates(response) {
     var removedCount = removeOrdersFromFeed(doneOrCanceled);
 
     if (removedCount > 0) {
-      reload(false, removedCount);
+      loadUnderProgress(false, removedCount);
     }
   }
 }
@@ -93,30 +130,39 @@ function removeOrdersFromFeed(orderIds) {
 
 function scheduleCheckingUpdatesForExecutor() {
   setTimeout(function () {
-    if (!autoUpdateEnabled || viewMode != 'available') {
-      scheduleCheckingUpdatesForExecutor();
-      return;
-    }
-    autoUpdateCanceled = false;
-    var params = buildParamsNewerThanFirstOrder('time');
+    scheduleFeedAction(function (runAfter, canceledFunc) {
+      if (canceledFunc()) {
+        return;
+      }
+      if (viewMode != 'available') {
+        scheduleCheckingUpdatesForExecutor();
+        runAfter();
+        return;
+      }
+      var params = buildParamsNewerThanFirstOrder('time');
 
-    ajaxCheckForUpdates(params, function (response) {
-      if (!autoUpdateCanceled) {
+      ajaxCheckForUpdates(params, function (response) {
+        if (canceledFunc()) {
+          return;
+        }
         applyUpdates(response);
-      }
-      scheduleCheckingUpdatesForExecutor();
-    }, function (errorMessage) {
-      if (!autoUpdateCanceled) {
-        var errorPlaceholder = $('#main-error-placeholder');
-        errorPlaceholder.text(errorMessage);
-        errorPlaceholder.show();
-      }
+        scheduleCheckingUpdatesForExecutor();
+        runAfter();
+      }, function (errorMessage) {
+        if (canceledFunc()) {
+          return;
+        }
+        console.log(errorMessage);
+        scheduleCheckingUpdatesForExecutor();
+        runAfter();
+      });
+    }, function() {
       scheduleCheckingUpdatesForExecutor();
     });
   }, 5000);
 }
 
-buildOrderBlockInFeed = function(data) {
+buildOrderBlockInFeed = function (data) {
   var addToBottomPanel = '';
 
   if (!data['done_time']) {
@@ -124,39 +170,34 @@ buildOrderBlockInFeed = function(data) {
       '<input class="button execute-order-button" type="button" ' +
       'data-order-id="' + data['order_id'] + '" ' +
       'data-order-price="' + data['price'] + '" ' +
-      'value="'+ msg('execute.order') +'"/>';
+      'value="' + msg('execute.order') + '"/>';
     addToBottomPanel = '<div class="action-panel"><span class="error-placeholder"></span>' +
     executeButton + '</div>';
   }
   return buildBaseOrderBlock(data, true, false, addToBottomPanel);
 };
 
-reload = function (reload, count, errorPlaceholder, runAfter) {
+loadOrders = function (reload, count, errorPlaceholder, canceledFunc, runAfter) {
   if (reload) {
-    autoUpdateEnabled = false;
-    autoUpdateCanceled = true;
     removeAllFromFeed();
   }
   var successCallback = function (response) {
+    if (canceledFunc()) {
+      return;
+    }
     appendLoadedOrdersToFeed(response);
-
-    if (runAfter) {
-      runAfter();
-    }
-    if (reload) {
-      autoUpdateEnabled = true;
-    }
+    runAfter();
   };
   var errorCallback = function (errorMessage) {
+    if (canceledFunc()) {
+      return;
+    }
     if (!errorPlaceholder) {
       errorPlaceholder = $('#main-error-placeholder');
     }
     errorPlaceholder.text(errorMessage);
     errorPlaceholder.show();
-
-    if (runAfter) {
-      runAfter();
-    }
+    runAfter();
   };
   var done = viewMode == 'done';
   var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
@@ -173,8 +214,11 @@ reload = function (reload, count, errorPlaceholder, runAfter) {
 };
 
 $(document).ready(function () {
-  init('available');
+  var viewModeButtons = init('available');
 
+  viewModeButtons.click(function () {
+    $('#show-new-orders').hide();
+  });
   $('#orders').on('click', '.execute-order-button', function (e) {
     e.preventDefault();
     clearErrors();
