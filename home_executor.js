@@ -25,7 +25,9 @@ function loadNewWaitingOrders(showNewLink) {
         return;
       }
       progress.remove();
-      $('#main-error-placeholder').text(errorMessage);
+      var errorPlaceholder = $('#top-error-placeholder');
+      errorPlaceholder.show();
+      errorPlaceholder.text(errorMessage);
       runAfter();
     });
   }, function () {
@@ -177,7 +179,7 @@ buildOrderBlockInFeed = function (data) {
   return buildBaseOrderBlock(data, true, false, addToBottomPanel);
 };
 
-loadOrders = function (reload, count, errorPlaceholder, canceledFunc, runAfter) {
+loadOrders = function (reload, count, errorCallback, canceledFunc, runAfter) {
   if (reload) {
     removeAllFromFeed();
   }
@@ -186,17 +188,6 @@ loadOrders = function (reload, count, errorPlaceholder, canceledFunc, runAfter) 
       return;
     }
     appendLoadedOrdersToFeed(response);
-    runAfter();
-  };
-  var errorCallback = function (errorMessage) {
-    if (canceledFunc()) {
-      return;
-    }
-    if (!errorPlaceholder) {
-      errorPlaceholder = $('#main-error-placeholder');
-    }
-    errorPlaceholder.text(errorMessage);
-    errorPlaceholder.show();
     runAfter();
   };
   var done = viewMode == 'done';
@@ -227,6 +218,7 @@ $(document).ready(function () {
   });
   $('#show-new-orders').click(function (e) {
     e.preventDefault();
+    clearErrors();
     loadNewWaitingOrders($(this));
   });
   scheduleCheckingUpdatesForExecutor();

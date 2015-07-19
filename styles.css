@@ -265,6 +265,11 @@ header .current-user-info > div {
   margin-left: 15px;
 }
 
+.home-content .orders-panel > .error-placeholder {
+  margin-left: 15px;
+  margin-bottom: 10px;
+}
+
 .home-content .orders-panel .progress {
   vertical-align: middle;
 }

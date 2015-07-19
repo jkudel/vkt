@@ -33,12 +33,10 @@
     <div class="orders-panel">
       <div class="show-new-panel"><span id="refresh-waiting-orders" class="in-feed-link hidden"><?= msg('refresh') ?></span></div>
 
-      <div id="main-error-placeholder" class="error-placeholder"></div>
+      <div id="top-error-placeholder" class="error-placeholder"></div>
       <div id="orders" class="orders"></div>
-      <div class="show-more-panel">
-        <span id="show-more" class="in-feed-link hidden"><?= msg('show.more') ?></span>
-        <span class="error-placeholder"></span>
-      </div>
+      <div class="show-more-panel"><span id="show-more" class="in-feed-link hidden"><?= msg('show.more') ?></span></div>
+      <div id="bottom-error-placeholder" class="error-placeholder"></div>
     </div>
   </div>
 

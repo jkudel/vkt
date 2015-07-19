@@ -265,7 +265,7 @@ function loadUnderProgress(reload, count, errorPlaceholder, progress) {
       progress.data('counter', (counter ? parseInt(counter) + 1 : 1));
     }
   }
-  var finished = function () {
+  scheduleLoadingOrders(reload, count, errorPlaceholder, function () {
     var counter = progress.data('counter');
     var c = counter ? parseInt(counter) : 0;
 
@@ -274,14 +274,30 @@ function loadUnderProgress(reload, count, errorPlaceholder, progress) {
     } else {
       progress.data('counter', c - 1);
     }
-  };
+  });
+}
+
+function scheduleLoadingOrders(reload, count, errorPlaceholder, finished) {
   scheduleFeedAction(function (runAfter, canceledFunc) {
-    if (!canceledFunc()) {
-      loadOrders(reload, count, errorPlaceholder, canceledFunc, function () {
-        finished();
-        runAfter();
-      });
+    if (canceledFunc()) {
+      return;
     }
+    var callback = function () {
+      finished();
+      runAfter();
+    };
+    var errorCallback = function (errorMessage) {
+      if (canceledFunc()) {
+        return;
+      }
+      if (!errorPlaceholder) {
+        errorPlaceholder = $('#bottom-error-placeholder');
+      }
+      errorPlaceholder.text(errorMessage);
+      errorPlaceholder.show();
+      callback();
+    };
+    loadOrders(reload, count, errorCallback, canceledFunc, callback);
   }, finished);
 }
 
@@ -343,7 +359,6 @@ function init(defaultViewMode) {
 
   $(window).bind('popstate', function () {
     chooseViewModeFromUrl(defaultViewMode);
-    clearErrors();
   });
   chooseViewModeFromUrl(defaultViewMode);
   return viewModeButtons;
@@ -352,8 +367,8 @@ function init(defaultViewMode) {
 $(document).ready(function () {
   $('#show-more').click(function (e) {
     e.preventDefault();
+    clearErrors();
     $(this).hide();
-    var errorPlaceholder = $('#bottom-error-placeholder');
-    loadUnderProgress(false, null, errorPlaceholder);
+    loadUnderProgress(false, null);
   });
 });

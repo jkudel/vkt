@@ -155,7 +155,7 @@ buildOrderBlockInFeed = function (data) {
   return buildBaseOrderBlock(data, false, true, addToBottomPanel);
 };
 
-loadOrders = function (reload, count, errorPlaceholder, canceledFunc, runAfter) {
+loadOrders = function (reload, count, errorCallback, canceledFunc, runAfter) {
   if (reload) {
     removeAllFromFeed();
   }
@@ -176,17 +176,7 @@ loadOrders = function (reload, count, errorPlaceholder, canceledFunc, runAfter) 
       updateRefreshWaitingOrdersButton();
     }
     runAfter();
-  }, function (errorMessage) {
-    if (canceledFunc()) {
-      return;
-    }
-    if (!errorPlaceholder) {
-      errorPlaceholder = $('#main-error-placeholder');
-    }
-    errorPlaceholder.text(errorMessage);
-    errorPlaceholder.show();
-    runAfter();
-  });
+  }, errorCallback);
 };
 
 function updateRefreshWaitingOrdersButton() {
@@ -206,6 +196,7 @@ $(document).ready(function () {
 
   $('#refresh-waiting-orders').click(function (e) {
     e.preventDefault();
+    clearErrors();
     var progress = $(this).next('.progress');
 
     if (progress.left() > 0) {
