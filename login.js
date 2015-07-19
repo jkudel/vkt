@@ -91,6 +91,10 @@ function validateRegisterForm(onTheFly) {
       result = false;
     }
     repeatPasswordErrorPlaceholder.text(error);
+
+    if (!error) {
+      repeatPasswordErrorPlaceholder.hide();
+    }
   } else {
     repeatPasswordErrorPlaceholder.text('');
     repeatPasswordErrorPlaceholder.hide();
@@ -98,10 +102,11 @@ function validateRegisterForm(onTheFly) {
   return result;
 }
 
-function submitFormAndGoHome(url, form) {
+function submitFormAndGoHome(url, form, progress) {
   ajaxSubmitForm(url, form, function () {
     window.location.href = 'index.php';
   }, function (errorMessage, errorCode, response) {
+    progress.remove();
     var fieldName = response['field_name'];
     var errorPlaceholder = fieldName ? getErrorPlaceholder(form.find('input[name="' + fieldName + '"]')) : null;
 
@@ -143,10 +148,18 @@ function modeSwitched() {
 $(document).ready(function () {
   $('#login-form').submit(function (e) {
     e.preventDefault();
+    var loginSubmit = $('#login-submit');
+    var progress = loginSubmit.prev('.progress');
+
+    if (progress.length > 0) {
+      return;
+    }
     $('#global-error-placeholder').text('');
 
     if (validateLoginForm(false)) {
-      submitFormAndGoHome(AJAX_LOGIN, $('#login-form'));
+      loginSubmit.before('<div class="progress"></div>');
+      progress = initProgress(loginSubmit.prev());
+      submitFormAndGoHome(AJAX_LOGIN, $('#login-form'), progress);
     }
     onTheFlyValidationEnabled = true;
   });
@@ -157,10 +170,18 @@ $(document).ready(function () {
   });
   $('#register-form').submit(function (e) {
     e.preventDefault();
+    var registerSubmit = $('#register-submit');
+    var progress = registerSubmit.prev('.progress');
+
+    if (progress.length > 0) {
+      return;
+    }
     $('#global-error-placeholder').text('');
 
     if (validateRegisterForm(false)) {
-      submitFormAndGoHome(AJAX_REGISTER, $('#register-form'));
+      registerSubmit.before('<div class="progress"></div>');
+      progress = initProgress(registerSubmit.prev());
+      submitFormAndGoHome(AJAX_REGISTER, $('#register-form'), progress);
     }
     onTheFlyValidationEnabled = true;
   });

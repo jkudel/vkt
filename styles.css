@@ -192,6 +192,11 @@ header .current-user-info > div {
   white-space: pre-wrap;
 }
 
+.login-register-form .progress {
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
 .login-register-form .field > div {
   display: inline-block;
 }

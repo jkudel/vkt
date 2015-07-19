@@ -25,7 +25,7 @@
           <div class="error-placeholder"></div>
         </div>
       </div>
-      <div class="field last"><input class="button" type="submit" value="<?= msg('sign.in') ?>"/></div>
+      <div class="field last"><input id="login-submit" class="button" type="submit" value="<?= msg('sign.in') ?>"/></div>
     </form>
   </div>
   <div class="hidden">
@@ -75,7 +75,7 @@
           } ?>
         </div>
       </div>
-      <div class="field last"><input class="button" type="submit" value="<?= msg('sign.up') ?>"/></div>
+      <div class="field last"><input id="register-submit" class="button" type="submit" value="<?= msg('sign.up') ?>"/></div>
     </form>
   </div>
   <div id="global-error-placeholder" class="error-placeholder"></div>
