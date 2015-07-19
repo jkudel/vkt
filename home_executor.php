@@ -1,6 +1,6 @@
 <div class="home-content executor">
   <?php include 'home_header.php'; ?>
-  <script type="text/javascript" src="home_executor.js"></script>
+  <script type="text/javascript" src="js/home_executor.js"></script>
   <div id="view-mode">
     <a href="?view-mode=available" class="toggle"><?= msg('view.mode.available') ?></a>
     <a href="?view-mode=done" class="toggle"><?= msg('view.mode.done') ?></a>

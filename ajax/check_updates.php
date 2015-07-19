@@ -1,5 +1,5 @@
 <?php
-require_once('../includes/common.php');
+require_once('../libraries/common.php');
 include('ajax_common.php');
 const MAX_CHECK_COUNT = 20;
 

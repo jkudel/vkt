@@ -20,5 +20,5 @@ const CONFIG = [
   'use_cache' => true,
 
   // Debugging
-  'show_down_ajax' => 2
+  'show_down_ajax' => 3
 ];

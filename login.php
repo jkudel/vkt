@@ -1,4 +1,4 @@
-<script type="text/javascript" src="login.js"></script>
+<script type="text/javascript" src="js/login.js"></script>
 
 <div class="login-content">
   <div class="toggle-panel">

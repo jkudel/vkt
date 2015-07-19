@@ -4,7 +4,7 @@ $role = $userInfo['role'];
 $roleName = $allRoleNames[$role];
 $balance = $userInfo['balance'];
 ?>
-<script type="text/javascript" src="home.js"></script>
+<script type="text/javascript" src="js/home.js"></script>
 
 <header>
   <div class="left-panel">

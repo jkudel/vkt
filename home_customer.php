@@ -1,6 +1,6 @@
 <div class="home-content customer">
   <?php include 'home_header.php'; ?>
-  <script type="text/javascript" src="home_customer.js"></script>
+  <script type="text/javascript" src="js/home_customer.js"></script>
   <div>
     <div class="hidden">
       <form id="new-order-form" action="#" method="POST" class="new-order-form">
