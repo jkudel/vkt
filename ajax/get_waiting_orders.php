@@ -2,9 +2,6 @@
 require_once('../libraries/common.php');
 include('ajax_common.php');
 
-internalErrorResponse();
-return;
-
 $userId = \sessions\getCurrentUserId();
 
 if (is_null($userId)) {
