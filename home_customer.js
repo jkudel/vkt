@@ -1,41 +1,15 @@
-function loadOrdersForCustomer(reload, count, errorPlaceholder, runAfter) {
-  if (reload) {
-    removeAllFromFeed();
-  }
-  var done = viewMode == 'done' ? 1 : 0;
-  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
-  params['done'] = done;
-
-  if (count) {
-    params['count'] = count;
-  }
-  ajaxGetMyOrders(params, function (response) {
-    if (runAfter) {
-      runAfter();
-    }
-    appendLoadedOrdersToFeed(response);
-  }, function (errorMessage) {
-    if (runAfter) {
-      runAfter();
-    }
-    if (!errorPlaceholder) {
-      errorPlaceholder = $('#main-error-placeholder');
-    }
-    errorPlaceholder.text(errorMessage);
-    errorPlaceholder.show();
-  });
-}
+var autoUpdateEnabled = true;
+var autoUpdateCanceled = false;
 
 function cancelOrder(orderId, orderBlock, link) {
   var errorPlaceholder = link.prevAll('.error-placeholder');
   link.before('<div class="progress"></div>');
-  var progress = link.prev();
-  initProgress(progress);
+  var progress = initProgress(link.prev());
 
   ajaxCancelOrder(orderId, function () {
     progress.remove();
     removeOrderBlock(orderBlock, orderId);
-    loadOrdersForCustomer(false, 1);
+    reload(false, 1);
   }, function (errorMessage, errorCode) {
     progress.remove();
 
@@ -83,32 +57,32 @@ function validateNewOrderForm() {
 
 function scheduleCheckingUpdatesForCustomer() {
   setTimeout(function () {
-    if (viewMode == 'done') {
-      loadNewDoneOrders(scheduleCheckingUpdatesForCustomer);
-    } else {
+    if (viewMode != 'done' || !autoUpdateEnabled) {
       scheduleCheckingUpdatesForCustomer();
+      return;
     }
+    autoUpdateCanceled = false;
+    var params = buildParamsNewerThanFirstOrder('done_time');
+    params['done'] = 1;
+
+    ajaxGetMyOrders(params, function (response) {
+      if (!autoUpdateCanceled) {
+        prependLoadedOrdersToFeed(response);
+      }
+      scheduleCheckingUpdatesForCustomer();
+    }, function (errorMessage) {
+      if (!autoUpdateCanceled) {
+        $('#main-error-placeholder').text(errorMessage);
+      }
+      scheduleCheckingUpdatesForCustomer();
+    });
   }, 5000);
-}
-
-function loadNewDoneOrders(runAfter) {
-  var params = buildParamsNewerThanFirstOrder('done_time');
-  params['done'] = 1;
-
-  ajaxGetMyOrders(params, function (response) {
-    prependLoadedOrdersToFeed(response);
-    runAfter();
-  }, function (errorMessage) {
-    $('#main-error-placeholder').text(errorMessage);
-    runAfter();
-  });
 }
 
 function createOrder(button) {
   var form = button.parents('form');
   button.before('<div class="progress"></div>');
-  var progress = button.prev();
-  initProgress(progress);
+  var progress = initProgress(button.prev());
 
   ajaxSubmitForm(AJAX_CREATE_ORDER, form, function (response) {
     progress.remove();
@@ -141,19 +115,47 @@ buildOrderBlockInFeed = function (data) {
     var cancelButton =
       '<input class="button cancel-order-button" type="button" ' +
       'data-order-id="' + data['order_id'] + '" ' +
-      'value="'+ msg('cancel.order') +'"/>';
+      'value="' + msg('cancel.order') + '"/>';
     addToBottomPanel = '<div class="action-panel""><span class="error-placeholder"></span>' +
-      cancelButton + '</div>';
+    cancelButton + '</div>';
   }
   return buildBaseOrderBlock(data, false, true, addToBottomPanel);
 };
 
-reloadAll = function () {
-  loadOrdersForCustomer(true);
-};
+reload = function (reload, count, errorPlaceholder, runAfter) {
+  if (reload) {
+    autoUpdateEnabled = false;
+    autoUpdateCanceled = true;
+    removeAllFromFeed();
+  }
+  var done = viewMode == 'done' ? 1 : 0;
+  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
+  params['done'] = done;
 
-showMore = function(errorPlaceholder, runAfter) {
-  loadOrdersForCustomer(false, null, errorPlaceholder, runAfter);
+  if (count) {
+    params['count'] = count;
+  }
+  ajaxGetMyOrders(params, function (response) {
+    appendLoadedOrdersToFeed(response);
+
+    if (runAfter) {
+      runAfter();
+    }
+    if (reload) {
+      autoUpdateEnabled = true;
+      updateRefreshWaitingOrdersButton();
+    }
+  }, function (errorMessage) {
+    if (!errorPlaceholder) {
+      errorPlaceholder = $('#main-error-placeholder');
+    }
+    errorPlaceholder.text(errorMessage);
+    errorPlaceholder.show();
+
+    if (runAfter) {
+      runAfter();
+    }
+  });
 };
 
 function updateRefreshWaitingOrdersButton() {
@@ -168,13 +170,17 @@ $(document).ready(function () {
   var viewModeButtons = init('waiting');
 
   viewModeButtons.click(function () {
-    updateRefreshWaitingOrdersButton();
+    $('#refresh-waiting-orders').hide();
   });
-  updateRefreshWaitingOrdersButton();
 
   $('#refresh-waiting-orders').click(function (e) {
     e.preventDefault();
-    loadOrdersForCustomer(true);
+    $(this).after('<div class="progress"></div>');
+    var progress = initProgress($(this).next());
+
+    reload(true, null, null, function() {
+      progress.remove();
+    });
   });
 
   $('#orders').on('click', '.cancel-order-button', function (e) {

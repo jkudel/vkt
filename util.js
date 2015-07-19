@@ -76,4 +76,5 @@ function initProgress(element) {
   setTimeout(function () {
     element.show();
   }, 500);
+  return element;
 }

@@ -2,8 +2,7 @@ const ORDER_LIST_PART_SIZE = 3;
 const VIEW_MODE_PARAM = 'view-mode';
 
 var buildOrderBlockInFeed = null;
-var reloadAll = null;
-var showMore = null;
+var reload = null;
 var feedOrdersIdSet = {};
 var feedOrders = [];
 var viewMode = null;
@@ -240,7 +239,18 @@ function chooseViewMode(mode, pushState) {
   if (pushState) {
     history.pushState({}, '', '?' + VIEW_MODE_PARAM + '=' + mode);
   }
-  reloadAll();
+  reloadUnderProgress();
+}
+
+function reloadUnderProgress() {
+  $('#show-more').hide();
+  var mode = $('#view-mode');
+  mode.after('<div class="progress big"></div>');
+  var progress = initProgress(mode.next());
+
+  reload(true, null, null, function() {
+    progress.remove();
+  });
 }
 
 function init(defaultViewMode) {
@@ -254,7 +264,6 @@ function init(defaultViewMode) {
   $(window).bind('popstate', function () {
     chooseViewModeFromUrl(defaultViewMode);
     clearErrors();
-    reloadAll();
   });
   chooseViewModeFromUrl(defaultViewMode);
   return viewModeButtons;
@@ -265,11 +274,10 @@ $(document).ready(function () {
     e.preventDefault();
     var showMoreLink = $(this);
     showMoreLink.after('<div class="progress"></div>');
-    var progress = showMoreLink.next();
-    initProgress(progress);
+    var progress = initProgress(showMoreLink.next());
     var errorPlaceholder = showMoreLink.nextAll('.error-placeholder');
 
-    showMore(errorPlaceholder, function() {
+    reload(false, null, errorPlaceholder, function() {
       progress.remove();
     });
   });

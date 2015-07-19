@@ -6,12 +6,19 @@
   width: 16px;
   height: 16px;
   display: inline-block;
-  background: url("img/ajax-loader.gif");
+  background: url("img/progress-indicator-small.gif");
+}
+
+.progress.big {
+  margin-top: 10px;
+  background: url("img/progress-indicator-big.gif");
+  width: 32px;
+  height: 32px;
 }
 
 .button, .toggle {
   text-decoration: none;
-  padding: 0.5em 1em;
+  padding: 6px 12px;
   cursor: pointer;
   display: inline-block;
   outline: none;

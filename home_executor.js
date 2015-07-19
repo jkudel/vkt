@@ -1,37 +1,5 @@
-function loadOrdersForExecutor(reload, count, errorPlaceholder, runAfter) {
-  if (reload) {
-    removeAllFromFeed();
-  }
-
-  var successCallback = function (response) {
-    if (runAfter) {
-      runAfter();
-    }
-    appendLoadedOrdersToFeed(response);
-  };
-  var errorCallback = function (errorMessage) {
-    if (runAfter) {
-      runAfter();
-    }
-    if (!errorPlaceholder) {
-      errorPlaceholder = $('#main-error-placeholder');
-    }
-    errorPlaceholder.text(errorMessage);
-    errorPlaceholder.show();
-  };
-  var done = viewMode == 'done';
-  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
-
-  if (count) {
-    params['count'] = count;
-  }
-  if (done) {
-    params['done'] = 1;
-    ajaxGetMyOrders(params, successCallback, errorCallback);
-  } else {
-    ajaxGetWaitingOrders(params, successCallback, errorCallback);
-  }
-}
+var autoUpdateEnabled = true;
+var autoUpdateCanceled = false;
 
 function loadNewWaitingOrders() {
   var params = buildParamsNewerThanFirstOrder('time');
@@ -47,8 +15,7 @@ function loadNewWaitingOrders() {
 function executeOrder(orderId, price, orderBlock, link) {
   var errorPlaceholder = link.prevAll('.error-placeholder');
   link.before('<div class="progress"></div>');
-  var progress = link.prev();
-  initProgress(progress);
+  var progress = initProgress(link.prev());
 
   ajaxExecuteOrder(orderId, function () {
     progress.remove();
@@ -57,7 +24,7 @@ function executeOrder(orderId, price, orderBlock, link) {
     var newBalance = parseFloat(balanceElement.text()) + delta;
     balanceElement.text(newBalance.toFixed(2));
     removeOrderBlock(orderBlock, orderId);
-    loadOrdersForExecutor(false, 1);
+    reload(false, 1);
   }, function (errorMessage, errorCode) {
     progress.remove();
 
@@ -95,7 +62,7 @@ function applyUpdates(response) {
     var removedCount = removeOrdersFromFeed(doneOrCanceled);
 
     if (removedCount > 0) {
-      loadOrdersForExecutor(false, removedCount);
+      reload(false, removedCount);
     }
   }
 }
@@ -122,19 +89,24 @@ function removeOrdersFromFeed(orderIds) {
 
 function scheduleCheckingUpdatesForExecutor() {
   setTimeout(function () {
-    if (viewMode != 'available') {
+    if (!autoUpdateEnabled || viewMode != 'available') {
       scheduleCheckingUpdatesForExecutor();
       return;
     }
+    autoUpdateCanceled = false;
     var params = buildParamsNewerThanFirstOrder('time');
 
     ajaxCheckForUpdates(params, function (response) {
-      applyUpdates(response);
+      if (!autoUpdateCanceled) {
+        applyUpdates(response);
+      }
       scheduleCheckingUpdatesForExecutor();
     }, function (errorMessage) {
-      var errorPlaceholder = $('#main-error-placeholder');
-      errorPlaceholder.text(errorMessage);
-      errorPlaceholder.show();
+      if (!autoUpdateCanceled) {
+        var errorPlaceholder = $('#main-error-placeholder');
+        errorPlaceholder.text(errorMessage);
+        errorPlaceholder.show();
+      }
       scheduleCheckingUpdatesForExecutor();
     });
   }, 5000);
@@ -155,12 +127,45 @@ buildOrderBlockInFeed = function(data) {
   return buildBaseOrderBlock(data, true, false, addToBottomPanel);
 };
 
-reloadAll = function () {
-  loadOrdersForExecutor(true);
-};
+reload = function (reload, count, errorPlaceholder, runAfter) {
+  if (reload) {
+    autoUpdateEnabled = false;
+    autoUpdateCanceled = true;
+    removeAllFromFeed();
+  }
+  var successCallback = function (response) {
+    appendLoadedOrdersToFeed(response);
 
-showMore = function(errorPlaceholder, runAfter) {
-  loadOrdersForExecutor(false, null, errorPlaceholder, runAfter);
+    if (runAfter) {
+      runAfter();
+    }
+    if (reload) {
+      autoUpdateEnabled = true;
+    }
+  };
+  var errorCallback = function (errorMessage) {
+    if (!errorPlaceholder) {
+      errorPlaceholder = $('#main-error-placeholder');
+    }
+    errorPlaceholder.text(errorMessage);
+    errorPlaceholder.show();
+
+    if (runAfter) {
+      runAfter();
+    }
+  };
+  var done = viewMode == 'done';
+  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
+
+  if (count) {
+    params['count'] = count;
+  }
+  if (done) {
+    params['done'] = 1;
+    ajaxGetMyOrders(params, successCallback, errorCallback);
+  } else {
+    ajaxGetWaitingOrders(params, successCallback, errorCallback);
+  }
 };
 
 $(document).ready(function () {
