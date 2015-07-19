@@ -1,5 +1,6 @@
 <?php
 require_once('../includes/common.php');
+include('ajax_common.php');
 
 $requestMethod = getIfExists($_SERVER, 'REQUEST_METHOD');
 

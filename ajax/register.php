@@ -1,5 +1,6 @@
 <?php
 require_once('../includes/common.php');
+include('ajax_common.php');
 
 $userName = getIfExists($_POST, 'user-name');
 $password = getIfExists($_POST, 'password');

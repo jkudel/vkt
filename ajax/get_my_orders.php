@@ -1,5 +1,6 @@
 <?php
 require_once('../includes/common.php');
+include('ajax_common.php');
 
 $userId = \sessions\getCurrentUserId();
 
