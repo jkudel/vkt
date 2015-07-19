@@ -246,7 +246,7 @@ function reloadUnderProgress() {
   $('#show-more').hide();
   var mode = $('#view-mode');
   mode.after('<div class="progress big"></div>');
-  var progress = initProgress(mode.next());
+  var progress = initProgress(mode.next(), true);
 
   reload(true, null, null, function() {
     progress.remove();

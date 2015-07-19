@@ -70,11 +70,19 @@ function escapeMultiLineString(s) {
   return escapeHtml(s).replace(/(?:\r\n|\r|\n)/g, '<br/>');
 }
 
-function initProgress(element) {
-  element.hide();
+function initProgress(element, useVisibilityProp) {
+  if (useVisibilityProp) {
+    element.css('visibility', 'hidden');
+  } else {
+    element.hide();
+  }
 
   setTimeout(function () {
-    element.show();
+    if (useVisibilityProp) {
+      element.css('visibility', 'visible');
+    } else {
+      element.show();
+    }
   }, 500);
   return element;
 }
