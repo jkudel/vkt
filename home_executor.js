@@ -1,13 +1,21 @@
-function loadOrdersForExecutor(reload, count) {
+function loadOrdersForExecutor(reload, count, errorPlaceholder, runAfter) {
   if (reload) {
     removeAllFromFeed();
   }
 
   var successCallback = function (response) {
+    if (runAfter) {
+      runAfter();
+    }
     appendLoadedOrdersToFeed(response);
   };
   var errorCallback = function (errorMessage) {
-    var errorPlaceholder = $('#main-error-placeholder');
+    if (runAfter) {
+      runAfter();
+    }
+    if (!errorPlaceholder) {
+      errorPlaceholder = $('#main-error-placeholder');
+    }
     errorPlaceholder.text(errorMessage);
     errorPlaceholder.show();
   };
@@ -39,7 +47,7 @@ function loadNewWaitingOrders() {
 function executeOrder(orderId, price, orderBlock, link) {
   var errorPlaceholder = link.prevAll('.error-placeholder');
   link.before('<div class="progress"></div>');
-  var progress = link.prevAll('.progress');
+  var progress = link.prev();
   initProgress(progress);
 
   ajaxExecuteOrder(orderId, function () {
@@ -151,6 +159,10 @@ reloadAll = function () {
   loadOrdersForExecutor(true);
 };
 
+showMore = function(errorPlaceholder, runAfter) {
+  loadOrdersForExecutor(false, null, errorPlaceholder, runAfter);
+};
+
 $(document).ready(function () {
   init('available');
 
@@ -159,10 +171,6 @@ $(document).ready(function () {
     clearErrors();
     var link = $(this);
     executeOrder(link.data('order-id'), link.data('order-price'), link.parents('.order'), link);
-  });
-  $('#show-more').click(function (e) {
-    e.preventDefault();
-    loadOrdersForExecutor(false);
   });
   $('#show-new-orders').click(function (e) {
     e.preventDefault();

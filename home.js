@@ -3,6 +3,7 @@ const VIEW_MODE_PARAM = 'view-mode';
 
 var buildOrderBlockInFeed = null;
 var reloadAll = null;
+var showMore = null;
 var feedOrdersIdSet = {};
 var feedOrders = [];
 var viewMode = null;
@@ -258,3 +259,18 @@ function init(defaultViewMode) {
   chooseViewModeFromUrl(defaultViewMode);
   return viewModeButtons;
 }
+
+$(document).ready(function () {
+  $('#show-more').click(function (e) {
+    e.preventDefault();
+    var showMoreLink = $(this);
+    showMoreLink.after('<div class="progress"></div>');
+    var progress = showMoreLink.next();
+    initProgress(progress);
+    var errorPlaceholder = showMoreLink.nextAll('.error-placeholder');
+
+    showMore(errorPlaceholder, function() {
+      progress.remove();
+    });
+  });
+});

@@ -1,4 +1,4 @@
-function loadOrdersForCustomer(reload, count) {
+function loadOrdersForCustomer(reload, count, errorPlaceholder, runAfter) {
   if (reload) {
     removeAllFromFeed();
   }
@@ -10,9 +10,17 @@ function loadOrdersForCustomer(reload, count) {
     params['count'] = count;
   }
   ajaxGetMyOrders(params, function (response) {
+    if (runAfter) {
+      runAfter();
+    }
     appendLoadedOrdersToFeed(response);
   }, function (errorMessage) {
-    var errorPlaceholder = $('#main-error-placeholder');
+    if (runAfter) {
+      runAfter();
+    }
+    if (!errorPlaceholder) {
+      errorPlaceholder = $('#main-error-placeholder');
+    }
     errorPlaceholder.text(errorMessage);
     errorPlaceholder.show();
   });
@@ -21,7 +29,7 @@ function loadOrdersForCustomer(reload, count) {
 function cancelOrder(orderId, orderBlock, link) {
   var errorPlaceholder = link.prevAll('.error-placeholder');
   link.before('<div class="progress"></div>');
-  var progress = link.prevAll('.progress');
+  var progress = link.prev();
   initProgress(progress);
 
   ajaxCancelOrder(orderId, function () {
@@ -96,8 +104,14 @@ function loadNewDoneOrders(runAfter) {
   });
 }
 
-function createOrder(form) {
+function createOrder(button) {
+  var form = button.parents('form');
+  button.before('<div class="progress"></div>');
+  var progress = button.prev();
+  initProgress(progress);
+
   ajaxSubmitForm(AJAX_CREATE_ORDER, form, function (response) {
+    progress.remove();
     $('#new-order-form').parent().hide();
     clearNewOrderFields();
 
@@ -107,7 +121,10 @@ function createOrder(form) {
       chooseViewMode('waiting', true);
     }
   }, function (errorMessage) {
-    $('#new-order-error-placeholder').text(errorMessage);
+    progress.remove();
+    var errorPlaceholder = $('#new-order-error-placeholder');
+    errorPlaceholder.show();
+    errorPlaceholder.text(errorMessage);
   });
 }
 
@@ -133,6 +150,10 @@ buildOrderBlockInFeed = function (data) {
 
 reloadAll = function () {
   loadOrdersForCustomer(true);
+};
+
+showMore = function(errorPlaceholder, runAfter) {
+  loadOrdersForCustomer(false, null, errorPlaceholder, runAfter);
 };
 
 function updateRefreshWaitingOrdersButton() {
@@ -173,17 +194,13 @@ $(document).ready(function () {
     clearNewOrderFields();
     clearErrors();
   });
-  $('#new-order-form').submit(function (e) {
+  $('#new-order-ok').click(function (e) {
     e.preventDefault();
     clearErrors();
 
     if (validateNewOrderForm()) {
       createOrder($(this));
     }
-  });
-  $('#show-more').click(function (e) {
-    e.preventDefault();
-    loadOrdersForCustomer(false);
   });
   scheduleCheckingUpdatesForCustomer();
 });

@@ -17,9 +17,9 @@
 
           <div class="error-placeholder"></div>
         </div>
-        <div id="new-order-error-placeholder" class="error-placeholder"></div>
         <div class="field last">
-          <input class="button" type="submit" value="<?= msg('new.order') ?>"/>
+          <span id="new-order-error-placeholder" class="error-placeholder"></span>
+          <input class="button" id="new-order-ok" type="submit" value="<?= msg('new.order') ?>"/>
           <input class="button" id="new-order-cancel" type="button" value="<?= msg('cancel') ?>"/>
         </div>
       </form>
@@ -35,7 +35,10 @@
 
       <div id="main-error-placeholder" class="error-placeholder"></div>
       <div id="orders" class="orders"></div>
-      <div class="show-more-panel"><span id="show-more" class="in-feed-link hidden"><?= msg('show.more') ?></span></div>
+      <div class="show-more-panel">
+        <span id="show-more" class="in-feed-link hidden"><?= msg('show.more') ?></span>
+        <span class="error-placeholder"></span>
+      </div>
     </div>
   </div>
 

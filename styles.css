@@ -224,7 +224,13 @@ header .current-user-info > div {
 
 .new-order-form .field .error-placeholder {
   padding-top: 3px;
+  padding-right: 3px;
   white-space: pre-wrap;
+}
+
+.new-order-form .field .progress {
+  vertical-align: middle;
+  margin-right: 10px;
 }
 
 .home-content {
@@ -250,6 +256,14 @@ header .current-user-info > div {
 .home-content .orders-panel .show-more-panel {
   margin-top: 15px;
   margin-left: 15px;
+}
+
+.home-content .orders-panel .progress {
+  vertical-align: middle;
+}
+
+.home-content .orders-panel .in-feed-link {
+  margin-right: 10px;
 }
 
 .order {
