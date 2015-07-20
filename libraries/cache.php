@@ -4,9 +4,9 @@ namespace cache;
 const FEED_CACHE_ID = 1;
 const DONE_OR_CANCELED_LOG_CACHE_ID = 2;
 
-const FEED_CACHE_LIFETIME = 10;
+const FEED_CACHE_LIFETIME = 2;
 const FEED_CACHE_SIZE = 300;
-const DONE_OR_CANCELED_LOG_CACHE_LIFETIME = 10;
+const DONE_OR_CANCELED_LOG_CACHE_LIFETIME = 2;
 
 function getDoneOrCanceledLog($userId, $lwTime) {
   $cacheDbInfo = getDbForCache($userId);
