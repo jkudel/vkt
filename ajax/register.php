@@ -7,30 +7,30 @@ $password = getIfExists($_POST, 'password');
 $repeatPassword = getIfExists($_POST, 'repeat-password');
 $role = getIfExists($_POST, 'role');
 
-if (!is_string($userName) || strlen($userName) == 0) {
+if (!is_string($userName) || mb_strlen($userName) == 0) {
   validationErrorResponse(msg('no.username.error'), 'user-name');
   return;
 }
 $userNameMaxLength = getCommonConstant('user.name.max.length');
 
-if (strlen($userName) > $userNameMaxLength) {
+if (mb_strlen($userName) > $userNameMaxLength) {
   validationErrorResponse(msg('user.name.length.error', $userNameMaxLength), 'user-name');
   return;
 }
-$userName = strtolower($userName);
+$userName = mb_strtolower($userName);
 
 if (!preg_match('/^\w+$/', $userName)) {
   validationErrorResponse(msg('invalid.char.in.username.error'), 'user-name');
   return;
 }
-if (!is_string($password) || strlen($password) == 0) {
+if (!is_string($password) || mb_strlen($password) == 0) {
   validationErrorResponse(msg('no.password.error'), 'password');
   return;
 }
 $passwordMinLength = getCommonConstant('password.min.length');
 $passwordMaxLength = getCommonConstant('password.max.length');
 
-if (strlen($password) < $passwordMinLength || strlen($password) > $passwordMaxLength) {
+if (mb_strlen($password) < $passwordMinLength || mb_strlen($password) > $passwordMaxLength) {
   validationErrorResponse(msg('password.length.error', $passwordMinLength, $passwordMaxLength), 'password');
   return;
 }

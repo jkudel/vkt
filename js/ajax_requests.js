@@ -7,6 +7,10 @@ function handleSuccessResponse(response, successCallback, errorCallback) {
   var errorCode = response['error_code'];
 
   if (errorMessage || errorCode) {
+    if (errorCode == 2) { // not authorized
+      window.location.href = 'index.php';
+      return;
+    }
     errorCallback(errorMessage, errorCode, response);
   } else {
     successCallback(response);

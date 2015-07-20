@@ -12,15 +12,15 @@ if ($requestMethod != 'POST') {
 $userName = getIfExists($_POST, 'user-name');
 $password = getIfExists($_POST, 'password');
 
-if (!is_string($userName) || strlen($userName) == 0) {
+if (!is_string($userName) || mb_strlen($userName) == 0) {
   validationErrorResponse(msg('no.username.error'), 'user-name');
   return;
 }
-if (!is_string($password) || strlen($password) == 0) {
+if (!is_string($password) || mb_strlen($password) == 0) {
   validationErrorResponse(msg('no.password.error'), 'password');
   return;
 }
-if (strlen($userName) > 20 || strlen($password) > 20) {
+if (mb_strlen($userName) > 20 || mb_strlen($password) > 20) {
   validationErrorResponse(msg('auth.failed.error'));
   return;
 }

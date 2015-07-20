@@ -27,7 +27,7 @@ function cancelOrder(orderId, orderBlock, link) {
       progress.remove();
 
       if (errorCode == ERROR_CODE_NO_OBJECT) {
-        errorMessage = msg('already.executed.error');
+        errorMessage = msg('already.canceled.error');
       }
       errorPlaceholder.show();
       errorPlaceholder.text(errorMessage);

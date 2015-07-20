@@ -2,6 +2,8 @@
 require_once('../libraries/common.php');
 include('ajax_common.php');
 
+const MAX_PRICE = 100000000;
+
 $userId = \sessions\getCurrentUserId();
 
 if (is_null($userId)) {
@@ -18,11 +20,16 @@ $descriptionMaxLength = getCommonConstant('description.max.length');
 
 if (mb_strlen($description) > $descriptionMaxLength) {
   validationErrorResponse(msg('description.length.error', $descriptionMaxLength));
+  return;
 }
 $price = floatval(getIfExists($_POST, 'price'));
 
 if ($price < 1) {
   validationErrorResponse(msg('min.price.error') . ' 1 ' . msg('currency'));
+  return;
+}
+if ($price > MAX_PRICE) {
+  validationErrorResponse(msg('max.price.error') . MAX_PRICE . msg('currency'));
   return;
 }
 $orderFromDb = \storage\addOrder($userId, $description, $price);

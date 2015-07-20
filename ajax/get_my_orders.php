@@ -60,7 +60,7 @@ foreach ($orders as $order) {
   $price = getIfExists($order, 'price');
 
   if ($price) {
-    $element['price'] = $price;
+    $element['price'] = number_format($price, 2);
   }
   $profit = getIfExists($order, 'profit');
 

@@ -49,16 +49,16 @@ function logMessage($message, $trace, $level) {
 function getRelativePath($ancestorPath, $path) {
   $ancestorPath = str_replace('\\', '/', $ancestorPath);
   $path = str_replace('\\', '/', $path);
-  return startsWith($path, $ancestorPath) ? substr($path, strlen($ancestorPath)) : null;
+  return startsWith($path, $ancestorPath) ? mb_substr($path, mb_strlen($ancestorPath)) : null;
 }
 
 function startsWith($s, $substring) {
-  return substr($s, 0, strlen($substring)) === $substring;
+  return mb_substr($s, 0, mb_strlen($substring)) === $substring;
 }
 
 function endsWidth($s, $substring) {
-  $l = strlen($substring);
-  return substr($s, strlen($s) - $l, $l) === $substring;
+  $l = mb_strlen($substring);
+  return mb_substr($s, mb_strlen($s) - $l, $l) === $substring;
 }
 
 function msg($key, ...$params) {
