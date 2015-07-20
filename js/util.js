@@ -76,3 +76,7 @@ function initProgress(element) {
   }, 500);
   return element;
 }
+
+function isMac() {
+  return navigator.userAgent.indexOf('Mac OS X');
+}

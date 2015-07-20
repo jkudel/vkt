@@ -213,18 +213,33 @@ $(document).ready(function () {
     var link = $(this);
     cancelOrder(link.data('order-id'), link.parents('.order'), link);
   });
+  var newOrderForm = $('#new-order-form');
 
   $('#new-order-button').click(function (e) {
     e.preventDefault();
-    $('#new-order-form').parent().slideDown('fast');
+    newOrderForm.parent().slideDown('fast', function() {
+      $('#new-order-description').focus();
+    });
     clearErrors();
   });
-  $('#new-order-cancel').click(function () {
-    $('#new-order-form').parent().slideUp('fast');
+  var newOrderOk = $('#new-order-ok');
+  var newOrderCancel = $('#new-order-cancel');
+  newOrderCancel.prop('title', 'Esc');
+
+  newOrderCancel.click(function () {
+    newOrderForm.parent().slideUp('fast');
     clearNewOrderFields();
     clearErrors();
   });
-  $('#new-order-ok').click(function (e) {
+  newOrderForm.keydown(function (e) {
+    if (e.keyCode == 27) {
+      newOrderCancel.click();
+    } else if ((e.ctrlKey || e.metaKey) && e.keyCode == 13) {
+      newOrderOk.click();
+    }
+  });
+  newOrderOk.prop('title', isMac() ? 'Command+Enter' : 'Ctrl+Enter');
+  newOrderOk.click(function (e) {
     e.preventDefault();
     clearErrors();
 
