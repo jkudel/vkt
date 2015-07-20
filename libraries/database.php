@@ -227,6 +227,10 @@ function insertIntoDoneTables($doneForCustomerLink, $doneForExecutorLink, $order
   return executeStatement($stmt);
 }
 
+function cleanDoneOrCanceledLog($link) {
+  return performQuery($link, 'DELETE FROM done_or_canceled_log WHERE time < UNIX_TIMESTAMP() - 300');
+}
+
 function selectDoneOrCanceledLog($link, $lwTime) {
   return doGetDoneOrCanceledLog($link, $lwTime, 'done_or_canceled_log');
 }

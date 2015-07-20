@@ -242,6 +242,16 @@ function getDoneOrCanceledLog($lwTime) {
   });
 }
 
+function cleanDoneOrCanceledLog() {
+  foreach (getAllDbsForDoneOrCanceledLog() as $dbInfo) {
+    $link = connect($dbInfo);
+
+    if ($link) {
+      \database\cleanDoneOrCanceledLog($link);
+    }
+  }
+}
+
 function getDoneOrdersForExecutor($userId,
                                   $lwTime, $lwCustomerId, $lwOrderId,
                                   $upTime, $upCustomerId, $upOrderId,
