@@ -155,7 +155,7 @@ function deleteFromWaitingOrders($link, $orderId, $customerId) {
   return mysqli_stmt_affected_rows($stmt) !== 0;
 }
 
-function selectFromWaitingOrders($link, $orderId, $customerId) {
+function getWaitingOrders($link, $orderId, $customerId) {
   $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE order_id=? AND customer_id=?');
 
   if (is_null($stmt)) {
@@ -231,7 +231,7 @@ function cleanDoneOrCanceledLog($link) {
   return performQuery($link, 'DELETE FROM done_or_canceled_log WHERE time < UNIX_TIMESTAMP() - 300');
 }
 
-function selectDoneOrCanceledLog($link, $lwTime) {
+function getDoneOrCanceledLog($link, $lwTime) {
   return doGetDoneOrCanceledLog($link, $lwTime, 'done_or_canceled_log');
 }
 
@@ -248,7 +248,7 @@ function doGetDoneOrCanceledLog($link, $lwTime, $tableName) {
   return executeAndGetResultAssoc($stmt, null);
 }
 
-function selectOrders($link, $tableName, $timeColumnName, $count, $condition) {
+function getOrders($link, $tableName, $timeColumnName, $count, $condition) {
   $query = 'SELECT * FROM' . ' ' . $tableName;
 
   if ($condition != '') {

@@ -166,7 +166,7 @@ function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
 }
 
 function doMarkOrderExecuted($waitingOrdersLink, $orderId, $customerId, $executorId, $commission) {
-  $orderInfo = \database\selectFromWaitingOrders($waitingOrdersLink, $orderId, $customerId);
+  $orderInfo = \database\getWaitingOrders($waitingOrdersLink, $orderId, $customerId);
 
   if (!$orderInfo) {
     return false;
@@ -230,7 +230,7 @@ function getDoneOrCanceledLog($lwTime) {
     if (!$link) {
       return null;
     }
-    $elements = \database\selectDoneOrCanceledLog($link, $lwTime);
+    $elements = \database\getDoneOrCanceledLog($link, $lwTime);
 
     if (is_null($elements)) {
       return null;
@@ -388,7 +388,7 @@ function doGetOrders($link, $tableName, $additionalCondition, $count, $params) {
     }
     $condition .= '(' . $upperBoundCondition . ')';
   }
-  return \database\selectOrders($link, $tableName, $timeColumnName, $count, $condition);
+  return \database\getOrders($link, $tableName, $timeColumnName, $count, $condition);
 }
 
 function readSession($sessionId) {
