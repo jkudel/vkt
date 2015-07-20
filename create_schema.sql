@@ -3,7 +3,7 @@ CREATE TABLE users (
   name     VARCHAR(20)             NOT NULL UNIQUE,
   password CHAR(60)                NOT NULL,
   role     TINYINT UNSIGNED        NOT NULL,
-  balance  DECIMAL(10, 2) UNSIGNED NOT NULL DEFAULT 0.00
+  balance  DECIMAL(15, 2) UNSIGNED NOT NULL DEFAULT 0.00
 )
   CHARACTER SET = utf8
   ENGINE = InnoDB;
