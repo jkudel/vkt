@@ -14,7 +14,8 @@ const COMMON_CONSTANTS = [
   'user.name.max.length' => 20,
   'password.min.length' => 4,
   'password.max.length' => 20,
-  'description.max.length' => 300
+  'description.max.length' => 300,
+  'order.max.price' => 1000000
 ];
 
 const ROLE_EXECUTOR = 0;

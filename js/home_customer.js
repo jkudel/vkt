@@ -69,6 +69,13 @@ function validateNewOrderForm() {
     priceErrorPlaceholder.show();
     return false;
   }
+  var maxPrice = getCommonConstant('order.max.price');
+
+  if (floatPrice > maxPrice) {
+    priceErrorPlaceholder.text(msg('max.price.error') + ' ' + maxPrice + ' ' + msg('currency'));
+    priceErrorPlaceholder.show();
+    return false;
+  }
   return result;
 }
 
