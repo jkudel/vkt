@@ -372,7 +372,7 @@ $(document).ready(function () {
   $('#show-more').click(function (e) {
     e.preventDefault();
     clearErrors();
-    $(this).hide();
+    $(this).prop('visibility', 'hidden');
     loadUnderProgress(false, null);
   });
 });
