@@ -49,15 +49,12 @@ function executeOrder(orderId, price, orderBlock, link) {
     if (canceledFunc()) {
       return;
     }
-    ajaxExecuteOrder(orderId, function () {
+    ajaxExecuteOrder(orderId, function (response) {
       if (canceledFunc()) {
         return;
       }
       progress.remove();
-      var balanceElement = $('#balance');
-      var delta = (parseFloat(price) * (1 - getCommonConstant('commission')));
-      var newBalance = parseFloat(balanceElement.text()) + delta;
-      balanceElement.text(newBalance.toFixed(2));
+      $('#balance').text(response['balance'] + ' ' + msg('currency'));
       removeOrderBlock(orderBlock, orderId);
       loadUnderProgress(false, 1);
       runAfter();

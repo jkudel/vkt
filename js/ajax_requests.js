@@ -90,7 +90,7 @@ function ajaxExecuteOrder(orderId, successCallback, errorCallback) {
     type: "POST",
     dataType: "json",
     data: {
-      'order_id': orderId,
+      'order_id': orderId
     },
     success: function (response) {
       handleSuccessResponse(response, successCallback, errorCallback);

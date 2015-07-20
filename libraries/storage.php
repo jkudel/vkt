@@ -145,10 +145,10 @@ function addOrder($customerId, $description, $price) {
 }
 
 /**
- * Return values:
- * false - no object
- * true - success
+ * Return:
  * null - error
+ * false - no object
+ * balance - success
  */
 function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
   $dbInfo = getDbForWaitingOrders($customerId);
@@ -159,10 +159,17 @@ function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
   }
   $result = doMarkOrderExecuted($link, $orderId, $customerId, $executorId, $commission);
 
-  if (is_null($result)) {
+  if (!$result) {
     \database\rollbackTransaction($link);
+    return $result;
   }
-  return \database\commitTransaction($link) ? $result : null;
+  $userInfo = \storage\getUserInfoById($executorId);
+
+  if (!$userInfo) {
+    \database\rollbackTransaction($link);
+    return null;
+  }
+  return \database\commitTransaction($link) ? $userInfo['balance'] : null;
 }
 
 function doMarkOrderExecuted($waitingOrdersLink, $orderId, $customerId, $executorId, $commission) {
@@ -198,7 +205,8 @@ function giveProfitToUser($userId, $profit) {
   if (!$link) {
     return false;
   }
-  return \database\updateUserBalance($link, $userId, $profit);
+  \database\updateUserBalance($link, $userId, $profit);
+  return true;
 }
 
 function insertOrderIntoDoneTables($orderInfo, $executorId, $profit) {

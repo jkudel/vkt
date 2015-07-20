@@ -19,8 +19,8 @@ $result = \storage\markOrderExecuted(
 
 if ($result === false) {
   noObjectErrorResponse();
-} else if (!$result) {
+} else if (is_null($result)) {
   internalErrorResponse();
 } else {
-  successResponse();
+  echo json_encode(['success' => 'true', 'balance' => $result]);
 }
