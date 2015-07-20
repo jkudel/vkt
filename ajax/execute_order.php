@@ -2,6 +2,8 @@
 require_once('../libraries/common.php');
 include('ajax_common.php');
 
+const COMMISSION = 0.1;
+
 $userId = \sessions\getCurrentUserId();
 
 if (is_null($userId)) {
@@ -15,7 +17,7 @@ if (!$parsedOrderId) {
   return;
 }
 $result = \storage\markOrderExecuted(
-  $parsedOrderId['order_id'], $parsedOrderId['customer_id'], $userId, getCommonConstant('commission'));
+  $parsedOrderId['order_id'], $parsedOrderId['customer_id'], $userId, COMMISSION);
 
 if ($result === false) {
   noObjectErrorResponse();

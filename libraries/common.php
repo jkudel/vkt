@@ -9,8 +9,10 @@ require_once(__DIR__ . '/database.php');
 require_once(__DIR__ . '/storage.php');
 require_once(__DIR__ . '/cache.php');
 
+/*
+ * Общие констаты для PHP и JS
+ */
 const COMMON_CONSTANTS = [
-  'commission' => 0.1,
   'user.name.max.length' => 20,
   'password.min.length' => 4,
   'password.max.length' => 20,
