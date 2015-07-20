@@ -451,7 +451,25 @@ function deleteExpiredSessions($link, $maxLifeTime) {
 }
 
 function connect($host, $port, $database) {
-  return mysqli_connect($host, 'root', '', $database);
+  $credentials = getIfExists(CONFIG, 'db_credentials');
+
+  if (!$credentials) {
+    return null;
+  }
+  $login = getIfExists($credentials, 'login');
+  $password = getIfExists($credentials, 'password');
+
+  if (is_null($login)) {
+    $login = '';
+  }
+  if (is_null($password)) {
+    $password = '';
+  }
+  if ($port) {
+    return mysqli_connect($host, $login, $password, $database, $port);
+  } else {
+    return mysqli_connect($host, $login, $password, $database);
+  }
 }
 
 function close($link) {

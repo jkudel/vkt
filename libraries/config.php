@@ -1,6 +1,10 @@
 <?php
 
 const CONFIG = [
+  'db_credentials' => [
+    'login' => 'root',
+    'password' => ''
+  ],
   'shards' => [
     0 => ['host' => '', 'database' => 'main'],
     1 => ['host' => '', 'database' => 'shard1'],
