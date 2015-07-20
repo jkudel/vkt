@@ -352,6 +352,10 @@ function scheduleFeedAction(action, cancel) {
 function init(defaultViewMode) {
   var viewModeButtons = $('#view-mode').find('a');
 
+  viewModeButtons.click(function (e) {
+    e.preventDefault();
+  });
+
   viewModeButtons.mousedown(function (e) {
     e.preventDefault();
     chooseViewMode(getViewModeByLink($(this)), true);
