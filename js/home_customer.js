@@ -199,7 +199,7 @@ $(document).ready(function () {
     clearErrors();
     var progress = $(this).next('.progress');
 
-    if (progress.left() > 0) {
+    if (progress.length > 0) {
       return;
     }
     $(this).after('<div class="progress"></div>');
