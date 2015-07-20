@@ -66,11 +66,12 @@
         <label for="register-role"><?= msg('role') ?>:</label>
 
         <div class="fill">
+          <!--suppress HtmlFormInputWithoutLabel -->
           <?php $i = 0;
           foreach ($allRoleNames as $roleId => $roleName) { ?>
             <input type="radio" id="role-button-<?= $i ?>" value="<?= $roleId ?>"
                    name="role" <?= $i == 0 ? 'checked' : '' ?>/>
-            <label for="role-button-<?= $i ?>" class="toggle"><?= $roleName ?></label>
+            <input type="button" class="toggle role-button" value="<?= $roleName ?>"/>
             <?php $i++;
           } ?>
         </div>

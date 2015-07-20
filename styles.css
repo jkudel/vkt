@@ -38,12 +38,8 @@
   border: 1px solid #c8c8c8;
 }
 
-.toggle:hover {
+.toggle:hover, .toggle:focus {
   background: #ebebeb;
-}
-
-.toggle:active {
-  color: #000000;
 }
 
 .button:active {
@@ -54,14 +50,10 @@ input[type=radio] {
   display: none;
 }
 
-.toggle.checked, input[type=radio]:checked + label.toggle {
+.toggle.checked, input[type=radio]:checked + .toggle {
   background: #668dd4;
   border-color: #668dd4;
   color: #fafafa;
-}
-
-label.toggle {
-  margin-right: 4px;
 }
 
 .inline-button {
@@ -82,6 +74,10 @@ label.toggle {
 
 .button:hover, .inline-button:hover {
   color: #e0e0fa;
+}
+
+.button:focus, .toggle.checked:focus, input[type=radio]:checked + .toggle:focus {
+  color: #d6d5fa;
 }
 
 .in-feed-link {

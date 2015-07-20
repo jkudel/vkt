@@ -124,6 +124,14 @@ function submitFormAndGoHome(url, form, progress) {
 function updateFormShown() {
   $('#login-form').parent().toggle(!newUserViewMode);
   $('#register-form').parent().toggle(newUserViewMode);
+
+  setTimeout(function () {
+    if (newUserViewMode) {
+      $('#register-user-name').focus();
+    } else {
+      $('#login-user-name').focus();
+    }
+  }, 10);
 }
 
 function setViewMode(value) {
@@ -198,6 +206,17 @@ $(document).ready(function () {
     setViewMode(true);
     modeSwitched();
   });
+
+  $('input[type=button].toggle').keydown(function(e) {
+    if (e.keyCode == 13 || e.keyCode == 32) {
+      $(this).mousedown();
+    }
+  });
+
+  $('.role-button').click(function () {
+    $(this).prev().prop('checked', true);
+  });
+
   $(window).bind('popstate', resetPageState);
   resetPageState();
 });
