@@ -13,7 +13,14 @@
   background: url("img/progress-indicator-big.gif");
   width: 32px;
   height: 32px;
+}
+
+.progress.big.bottom {
   margin-bottom: 20px;
+}
+
+.progress.big.top {
+  margin-top: 20px;
 }
 
 .button, .toggle {

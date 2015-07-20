@@ -179,16 +179,13 @@ buildOrderBlockInFeed = function (data) {
   return buildBaseOrderBlock(data, true, false, addToBottomPanel);
 };
 
-loadOrders = function (reload, count, errorCallback, canceledFunc, runAfter) {
-  if (reload) {
-    removeAllFromFeed();
-  }
+loadOrders = function (reload, count, errorCallback, canceledFunc, callback) {
   var successCallback = function (response) {
     if (canceledFunc()) {
       return;
     }
+    callback();
     appendLoadedOrdersToFeed(response);
-    runAfter();
   };
   var done = viewMode == 'done';
   var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');

@@ -155,10 +155,7 @@ buildOrderBlockInFeed = function (data) {
   return buildBaseOrderBlock(data, false, true, addToBottomPanel);
 };
 
-loadOrders = function (reload, count, errorCallback, canceledFunc, runAfter) {
-  if (reload) {
-    removeAllFromFeed();
-  }
+loadOrders = function (reload, count, errorCallback, canceledFunc, callback) {
   var done = viewMode == 'done' ? 1 : 0;
   var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
   params['done'] = done;
@@ -170,12 +167,12 @@ loadOrders = function (reload, count, errorCallback, canceledFunc, runAfter) {
     if (canceledFunc()) {
       return;
     }
+    callback();
     appendLoadedOrdersToFeed(response);
 
     if (reload) {
       updateRefreshWaitingOrdersButton();
     }
-    runAfter();
   }, errorCallback);
 };
 

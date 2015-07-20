@@ -122,13 +122,6 @@ function removeOrderBlock(selector, orderId) {
   delete feedOrdersIdSet[orderId];
 }
 
-function removeAllFromFeed() {
-  $('#show-more').hide();
-  $('#orders').html('');
-  feedOrders = [];
-  feedOrdersIdSet = {};
-}
-
 function buildHtmlForOrdersList(list) {
   var builder = [];
 
@@ -248,11 +241,19 @@ function chooseViewMode(mode, pushState) {
 }
 
 function fullReloadUnderProgress(progress) {
-  cancelAllFeedActions();
-  loadUnderProgress(true, null, null, progress);
+  cancelAllFeedActions(true);
+
+  if (progress == null) {
+    var ordersPanel = $('.orders-panel');
+    ordersPanel.before('<div class="progress big top"></div>');
+    progress = initProgress(ordersPanel.prev());
+  }
+  loadUnderProgress(true, null, null, progress, function() {
+    cancelAllFeedActions(false);
+  });
 }
 
-function loadUnderProgress(reload, count, errorPlaceholder, progress) {
+function loadUnderProgress(reload, count, errorPlaceholder, progress, callback) {
   if (!progress) {
     var ordersPanel = $('.orders-panel');
     progress = ordersPanel.next('.progress');
@@ -274,79 +275,95 @@ function loadUnderProgress(reload, count, errorPlaceholder, progress) {
     } else {
       progress.data('counter', c - 1);
     }
+    if (callback) {
+      callback();
+    }
   });
 }
 
 function scheduleLoadingOrders(reload, count, errorPlaceholder, finished) {
+  var clearUiIfReload = function() {
+    if (reload) {
+      $('#orders').html('');
+    }
+  };
+  var canceledCallback = function () {
+    clearUiIfReload();
+    finished();
+  };
   scheduleFeedAction(function (runAfter, canceledFunc) {
     if (canceledFunc()) {
       return;
     }
-    var callback = function () {
-      finished();
-      runAfter();
-    };
     var errorCallback = function (errorMessage) {
       if (canceledFunc()) {
         return;
       }
+      clearUiIfReload();
+
       if (!errorPlaceholder) {
         errorPlaceholder = $('#bottom-error-placeholder');
       }
       errorPlaceholder.text(errorMessage);
       errorPlaceholder.show();
-      callback();
+      finished();
+      runAfter();
     };
-    loadOrders(reload, count, errorCallback, canceledFunc, callback);
-  }, finished);
+    if (reload) {
+      feedOrders = [];
+      feedOrdersIdSet = {};
+    }
+    loadOrders(reload, count, errorCallback, canceledFunc, function () {
+      if (canceledFunc()) {
+        return;
+      }
+      clearUiIfReload();
+      finished();
+      runAfter();
+    });
+  }, canceledCallback);
 }
 
-function cancelAllFeedActions() {
+function cancelAllFeedActions(currentlyExecuted) {
   if (executingFeedActionInfo) {
-    executingFeedActionInfo.canceled = true;
-    executingFeedActionInfo.cancel();
-
+    if (currentlyExecuted) {
+      executingFeedActionInfo.canceled = true;
+      executingFeedActionInfo.cancel();
+      executingFeedActionInfo = null;
+    }
     for (var i = 0; i < feedActionsQueue.length; i++) {
       var actionInfo = feedActionsQueue[i];
       actionInfo.canceled = true;
       actionInfo.cancel();
     }
     feedActionsQueue = [];
-    executingFeedActionInfo = null;
   }
 }
 
-function executeAction(actionInfo) {
-  actionInfo.action(function () {
-    executeNextFeedActionLater();
-  }, function () {
-    return actionInfo.canceled;
-  });
-}
+function executeActionLater(actionInfo) {
+  executingFeedActionInfo = actionInfo;
 
-function executeNextFeedActionLater() {
   setTimeout(function () {
-    if (feedActionsQueue.length > 0) {
-      var actionInfo = feedActionsQueue.shift();
-      executingFeedActionInfo = actionInfo;
-      executeAction(actionInfo);
-    } else {
-      executingFeedActionInfo = null;
-    }
-  }, 100)
+    actionInfo.action(function () {
+      if (feedActionsQueue.length > 0) {
+        executeActionLater(feedActionsQueue.shift());
+      } else {
+        executingFeedActionInfo = null;
+      }
+    }, function () {
+      return actionInfo.canceled;
+    });
+  }, 100);
 }
 
 function scheduleFeedAction(action, cancel) {
   var actionInfo = {action: action, cancel: cancel};
 
-  setTimeout(function () {
-    if (!executingFeedActionInfo) {
-      executingFeedActionInfo = actionInfo;
-      executeAction(actionInfo);
-    } else {
-      feedActionsQueue.push(actionInfo);
-    }
-  }, 100);
+  if (!executingFeedActionInfo) {
+    executeActionLater(actionInfo);
+  } else {
+    feedActionsQueue.push(actionInfo);
+  }
 }
 
 function init(defaultViewMode) {
