@@ -38,7 +38,11 @@
   border: 1px solid #c8c8c8;
 }
 
-.toggle:hover, .toggle:focus {
+.toggle:active {
+  color: inherit;
+}
+
+.toggle:hover {
   background: #ebebeb;
 }
 
@@ -76,8 +80,8 @@ input[type=radio] {
   color: #e0e0fa;
 }
 
-.button:focus, .toggle.checked:focus, input[type=radio]:checked + .toggle:focus {
-  color: #d6d5fa;
+.button:focus, .toggle:focus {
+  outline: 2px solid #bdd4f9;
 }
 
 .in-feed-link {
