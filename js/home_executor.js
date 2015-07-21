@@ -89,19 +89,22 @@ function applyUpdates(response) {
   }
   var newOrdersCount = response['new_orders_count'];
   var showNewOrders = $('#show-new-orders');
+  showNewOrders.hide();
 
   if (newOrdersCount) {
-    var newOrdersNotification;
-
-    if (response['new_orders_has_more']) {
-      newOrdersNotification = msg('new.orders.available') + ' ' + newOrdersCount + ' ' + msg('or.more');
+    if (feedOrders.length == 0) {
+      showNewOrders.click();
     } else {
-      newOrdersNotification = msg('new.orders.available') + ' ' + newOrdersCount;
+      var newOrdersNotification;
+
+      if (response['new_orders_has_more']) {
+        newOrdersNotification = msg('new.orders.available') + ' ' + newOrdersCount + ' ' + msg('or.more');
+      } else {
+        newOrdersNotification = msg('new.orders.available') + ' ' + newOrdersCount;
+      }
+      showNewOrders.text(newOrdersNotification);
+      showNewOrders.show();
     }
-    showNewOrders.text(newOrdersNotification);
-    showNewOrders.show();
-  } else {
-    showNewOrders.hide();
   }
   var doneOrCanceled = response['done_or_canceled'];
 
