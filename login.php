@@ -1,6 +1,7 @@
 <script type="text/javascript" src="js/login.js"></script>
 
 <div class="login-content">
+  <div class="title"><?=msg('title')?></div>
   <div class="toggle-panel">
     <input id="already-registered" class="toggle" type="button" value="<?= msg('already.registered') ?>"/>
     <input id="new-user" class="toggle" type="button" value="<?= msg('new.user') ?>"/>

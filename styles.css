@@ -179,6 +179,14 @@ header .current-user-info > div {
   font-size: 14px;
 }
 
+.login-content .title {
+  font-size: 2em;
+  font-weight: bold;
+  vertical-align: middle;
+  margin-bottom: 20px;
+  color: #5f79b4;
+}
+
 .login-content, .home-content {
   display: inline-block;
   background: #f6f6f6;
