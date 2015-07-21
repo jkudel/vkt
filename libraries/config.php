@@ -21,7 +21,7 @@ const CONFIG = [
     'cache' => [0]
   ],
   'store_sessions_in_db' => true,
-  'use_cache' => true,
+  'use_cache' => false,
 
   // Debugging
   'show_down_ajax' => 0
