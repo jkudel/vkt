@@ -158,7 +158,7 @@ function scheduleCheckingUpdatesForExecutor() {
     }, function() {
       scheduleCheckingUpdatesForExecutor();
     });
-  }, 1000);
+  }, 4000);
 }
 
 buildOrderBlockInFeed = function (data) {

@@ -111,7 +111,7 @@ function scheduleCheckingUpdatesForCustomer() {
     }, function() {
       scheduleCheckingUpdatesForCustomer();
     });
-  }, 5000);
+  }, 4000);
 }
 
 function createOrder(button) {
