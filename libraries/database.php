@@ -382,9 +382,13 @@ function getOrders($link, $tableName, $timeColumnName, $columns, $count, $condit
   return $result;
 }
 
-function getFeedCache($link) {
-  $result = performQuery($link, 'SELECT * FROM feed_cache ORDER BY time DESC, ' .
-    'customer_id DESC, order_id DESC');
+function getFeedCache($link, $lock) {
+  $query = 'SELECT * FROM feed_cache ORDER BY time DESC, customer_id DESC, order_id DESC';
+
+  if ($lock) {
+    $query .= ' FOR UPDATE';
+  }
+  $result = performQuery($link, $query);
   return $result ? fetchAllAssoc($result) : null;
 }
 

@@ -34,11 +34,11 @@ function getDoneOrCanceledLog($userId, $lwTime) {
   if (is_null($orders)) {
     return null;
   }
+  if (!removeOrdersFromFeedCache($link, $orders)) {
+    logError('cannot remove orders from feed_cache');
+  }
   if (!cacheDoneOrCanceledLog($link, $orders, $timestamp)) {
     logError('cannot cache done_or_canceled_log');
-  }
-  if (!\database\setCacheExpirationTime($link, FEED_CACHE_ID, 0)) {
-    logError('cannot invalidate feed cache');
   }
   return $orders;
 }
@@ -75,6 +75,35 @@ function cacheDoneOrCanceledLog($link, $orders, $timestamp) {
   if (!\database\setCacheExpirationTime($link, DONE_OR_CANCELED_LOG_CACHE_ID, $expirationTime) ||
     !\database\putDoneOrCanceledLogCache($link, $orders)
   ) {
+    \database\rollbackTransaction($link);
+    return false;
+  }
+  return \database\commitTransaction($link);
+}
+
+function removeOrdersFromFeedCache($link, $orders) {
+  if (!\database\beginTransaction($link)) {
+    return false;
+  }
+  $cache = \database\getFeedCache($link, true);
+
+  if (is_null($cache)) {
+    \database\rollbackTransaction($link);
+    return false;
+  }
+  if (!$cache) {
+    \database\rollbackTransaction($link);
+    return true;
+  }
+  $idSet = [];
+
+  foreach ($orders as $order) {
+    $idSet[$order['customer_id'] . '_' . $order['order_id']] = true;
+  }
+  $cache = array_filter($cache, function ($order) use ($idSet) {
+    return !array_key_exists($order['customer_id'] . '_' . $order['order_id'], $idSet);
+  });
+  if (!\database\putFeedCache($link, $cache)) {
     \database\rollbackTransaction($link);
     return false;
   }
@@ -133,7 +162,7 @@ function getCachedWaitingOrders($link, $lowerBound, $upperBound, $count, $timest
   if (!$expirationTime || $timestamp > $expirationTime) {
     return null;
   }
-  $cachedOrders = \database\getFeedCache($link);
+  $cachedOrders = \database\getFeedCache($link, false);
   return is_null($cachedOrders) ? null :
     filterWaitingOrders($cachedOrders, $lowerBound, $upperBound, $count);
 }
