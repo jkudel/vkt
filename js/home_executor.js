@@ -63,7 +63,9 @@ function executeOrder(orderId, orderBlock, link) {
       if (executionLog.length > 50) {
         executionLog = executionLog.shift();
       }
-      loadUnderProgress(false, 1);
+      if (feedOrders.length == ORDER_LIST_PART_SIZE - 1) {
+        loadUnderProgress(false, 1);
+      }
       runAfter();
     }, function (errorMessage, errorCode) {
       if (canceledFunc()) {
@@ -111,7 +113,7 @@ function applyUpdates(response) {
   if (doneOrCanceled) {
     var removedCount = removeOrdersFromFeed(doneOrCanceled);
 
-    if (removedCount > 0) {
+    if (removedCount > 0 && feedOrders.length == ORDER_LIST_PART_SIZE - removedCount) {
       loadUnderProgress(false, removedCount);
     }
   }
