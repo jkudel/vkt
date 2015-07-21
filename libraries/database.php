@@ -585,10 +585,16 @@ function deleteExpiredSessions($link, $maxLifeTime) {
 
 function connect($host, $port, $database, $login, $password) {
   if ($port) {
-    return mysqli_connect($host, $login, $password, $database, $port);
+    $link = mysqli_connect($host, $login, $password, $database, $port);
   } else {
-    return mysqli_connect($host, $login, $password, $database);
+    $link = mysqli_connect($host, $login, $password, $database);
   }
+
+  if ($link && !mysqli_set_charset($link, 'utf8')) {
+    close($link);
+    return null;
+  }
+  return $link;
 }
 
 function close($link) {
