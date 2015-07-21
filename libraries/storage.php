@@ -453,12 +453,22 @@ function connect($dbInfo) {
   if (!$port) {
     $port = '';
   }
+  $login = getIfExists($dbInfo, 'login');
+
+  if (is_null($login)) {
+    $login = '';
+  }
+  $password = getIfExists($dbInfo, 'password');
+
+  if (is_null($password)) {
+    $password = '';
+  }
   $key = $host . '||' . $database;
   global $hostAndDb2link;
   $link = getIfExists($hostAndDb2link, $key);
 
   if (!$link) {
-    $link = \database\connect($host, $port, $database);
+    $link = \database\connect($host, $port, $database, $login, $password);
 
     if (!$link) {
       logError('cannot connect to database ' . $host . ': '.$database);
