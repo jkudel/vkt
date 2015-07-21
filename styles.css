@@ -36,7 +36,7 @@
 
 .button {
   background: #668dd4;
-  color: #fafafa;
+  color: #ffffff;
   border: 0;
 }
 
@@ -64,12 +64,12 @@ input[type=radio] {
 .toggle.checked, input[type=radio]:checked + .toggle {
   background: #668dd4;
   border-color: #668dd4;
-  color: #fafafa;
+  color: #ffffff;
 }
 
 .inline-button {
   border-left: 1px solid #c8c8c8;
-  color: #fafafa;
+  color: #ffffff;
   text-decoration: none;
   font-size: 0.9em;
   font-family: sans-serif;
@@ -132,7 +132,7 @@ header {
   margin-bottom: 10px;
   overflow: hidden;
   background: #668dd4;
-  color: #fafafa;
+  color: #ffffff;
   line-height: 60px;
 }
 
