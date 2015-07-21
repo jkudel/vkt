@@ -151,6 +151,11 @@ function addOrder($customerId, $description, $price) {
  * balance - success
  */
 function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
+  $userInfo = getUserInfoById($customerId);
+
+  if (!$userInfo || getIfExists($userInfo, 'role') !== ROLE_EXECUTOR) {
+    return null;
+  }
   $dbInfo = getDbForWaitingOrders($customerId);
   $link = $dbInfo ? connect($dbInfo) : null;
 
