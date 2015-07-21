@@ -45,4 +45,4 @@ $order = [
   'price' => number_format($orderFromDb['price'], 2),
   'time' => $orderFromDb['time'],
 ];
-echo json_encode(['order' => $order]);
+echo jsonEncode(['order' => $order]);

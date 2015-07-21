@@ -33,7 +33,7 @@ $presentableLog = array_map(function ($order) {
   return getCompositeOrderId($order);
 }, $log);
 
-echo json_encode([
+echo jsonEncode([
   'new_orders_count' => $newOrdersCount,
   'new_orders_has_more' => $newOrdersHasMore,
   'done_or_canceled' => $presentableLog

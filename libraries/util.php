@@ -123,3 +123,13 @@ function mergeSortedArrays($arrays, $removeDuplicates, $asc, $func) {
   }
   return $result;
 }
+
+function jsonEncode($value) {
+  $result = json_encode($value);
+
+  if ($result === false) {
+    logError('cannot encode json: ' . json_last_error() . ': ' . json_last_error_msg());
+    return null;
+  }
+  return $result;
+}

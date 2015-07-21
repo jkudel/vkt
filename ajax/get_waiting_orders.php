@@ -49,4 +49,4 @@ foreach ($orders as $order) {
   }
 }
 $hasMore = sizeof($orders) > $count;
-echo json_encode(['list' => $list, 'has_more' => ($hasMore ? 'true' : 'false')]);
+echo jsonEncode(['list' => $list, 'has_more' => ($hasMore ? 'true' : 'false')]);

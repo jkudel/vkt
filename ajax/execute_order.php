@@ -24,5 +24,5 @@ if ($result === false) {
 } else if (is_null($result)) {
   internalErrorResponse();
 } else {
-  echo json_encode(['success' => 'true', 'balance' => $result]);
+  echo jsonEncode(['success' => 'true', 'balance' => $result]);
 }
