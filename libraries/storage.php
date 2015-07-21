@@ -173,7 +173,7 @@ function markOrderExecuted($orderId, $customerId, $executorId, $commission) {
 }
 
 function doMarkOrderExecuted($waitingOrdersLink, $orderId, $customerId, $executorId, $commission) {
-  $orderInfo = \database\getWaitingOrders($waitingOrdersLink, $orderId, $customerId);
+  $orderInfo = \database\findWaitingOrder($waitingOrdersLink, $orderId, $customerId);
 
   if (!$orderInfo) {
     return false;
@@ -268,7 +268,8 @@ function getDoneOrdersForExecutor($userId,
     $upTime, $upCustomerId, $upOrderId);
   $dbInfo = getDbForDoneOrdersForExecutor($userId);
   $link = $dbInfo ? connect($dbInfo) : null;
-  return !$link ? null : doGetOrders($link, 'done_orders_for_executor',
+  $columns = ['order_id', 'customer_id', 'description', 'profit', 'time', 'done_time'];
+  return !$link ? null : doGetOrders($link, 'done_orders_for_executor', $columns,
     'executor_id = ' . intval($userId), $count, $params);
 }
 
@@ -278,9 +279,14 @@ function getOrdersForCustomer($userId, $done,
   $timeColumnName = $done ? 'done_time' : 'time';
   $params = buildParamsForGetOrders($timeColumnName, $lwTime, 0, $lwOrderId, $upTime, 0, $upOrderId);
   $tableName = $done ? 'done_orders_for_customer' : 'waiting_orders';
+  $columns = ['order_id', 'customer_id', 'description', 'price', 'time'];
+
+  if ($done) {
+    array_push($columns, 'done_time', 'executor_id');
+  }
   $dbInfo = $done ? getDbForDoneOrdersForCustomer($userId) : getDbForWaitingOrders($userId);
   $link = $dbInfo ? connect($dbInfo) : null;
-  return !$link ? null : doGetOrders($link, $tableName,
+  return !$link ? null : doGetOrders($link, $tableName, $columns,
     'customer_id = ' . intval($userId), $count, $params);
 }
 
@@ -289,6 +295,7 @@ function getWaitingOrders($lwTime, $lwCustomerId, $lwOrderId,
   $params = buildParamsForGetOrders('time', $lwTime, $lwCustomerId, $lwOrderId,
     $upTime, $upCustomerId, $upOrderId);
   $arrays = [];
+  $columns = ['order_id', 'customer_id', 'description', 'price', 'time'];
   
   foreach (getAllDbsForWaitingOrders() as $dbInfo) {
     $link = connect($dbInfo);
@@ -296,7 +303,7 @@ function getWaitingOrders($lwTime, $lwCustomerId, $lwOrderId,
     if (!$link) {
       return null;
     }
-    $elements = doGetOrders($link, 'waiting_orders', '', $count, $params);
+    $elements = doGetOrders($link, 'waiting_orders', $columns, '', $count, $params);
 
     if (is_null($elements)) {
       return null;
@@ -373,7 +380,7 @@ function buildUpperBoundCondition($params) {
   }
 }
 
-function doGetOrders($link, $tableName, $additionalCondition, $count, $params) {
+function doGetOrders($link, $tableName, $columns, $additionalCondition, $count, $params) {
   $condition = $additionalCondition;
   $timeColumnName = getIfExists($params, 'time_column_name');
 
@@ -396,7 +403,7 @@ function doGetOrders($link, $tableName, $additionalCondition, $count, $params) {
     }
     $condition .= '(' . $upperBoundCondition . ')';
   }
-  return \database\getOrders($link, $tableName, $timeColumnName, $count, $condition);
+  return \database\getOrders($link, $tableName, $timeColumnName, $columns, $count, $condition);
 }
 
 function readSession($sessionId) {

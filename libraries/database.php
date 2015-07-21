@@ -2,6 +2,7 @@
 namespace database;
 
 const CANNOT_BIND_SQL_PARAMS = 'cannot bind params to sql query';
+const CANNOT_BIND_RESULT = 'cannot bind result';
 
 function insertUser($link, $userId, $userName, $passwordHash, $role) {
   $stmt = prepareQuery($link, 'INSERT INTO users (id, name, password, role) VALUES(?, ?, ?, ?)');
@@ -11,9 +12,13 @@ function insertUser($link, $userId, $userName, $passwordHash, $role) {
   }
   if (!mysqli_stmt_bind_param($stmt, 'issi', $userId, $userName, $passwordHash, $role)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
   }
-  return executeStatement($stmt);
+  else {
+    $result = executeStatement($stmt);
+  }
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function getNextUserId($link) {
@@ -47,28 +52,32 @@ function getUserIdByName($link, $name) {
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 's', $name)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } if (executeStatement($stmt)) {
+    $result = intval(fetchOnlyValueForStmt($stmt));
   }
-  return executeAndProcessResult($stmt, null, function ($result) {
-    return intval(fetchOnlyValue($result));
-  });
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function getUserInfoByName($link, $name) {
-  $stmt = prepareQuery($link, 'SELECT * FROM users WHERE name=?');
+  $stmt = prepareQuery($link, 'SELECT id, name, password, role, balance FROM users WHERE name=?');
 
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 's', $name)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } else if (executeStatement($stmt)) {
+    $result = fetchUserInfo($stmt);
   }
-  return executeAndProcessResult($stmt, null, function ($result) {
-    return mysqli_fetch_assoc($result);
-  });
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function getUserInfoById($link, $id) {
@@ -77,13 +86,32 @@ function getUserInfoById($link, $id) {
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 's', $id)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+  } else if (executeStatement($stmt)) {
+    $result = fetchUserInfo($stmt);
+  }
+  mysqli_stmt_close($stmt);
+  return $result;
+}
+
+function fetchUserInfo($stmt) {
+  if (!mysqli_stmt_bind_result($stmt, $id, $name, $password, $role, $balance)) {
+    logMysqlStmtError(CANNOT_BIND_RESULT, $stmt);
     return null;
   }
-  return executeAndProcessResult($stmt, null, function ($result) {
-    return mysqli_fetch_assoc($result);
-  });
+  if (!mysqli_stmt_fetch($stmt)) {
+    return null;
+  }
+  return [
+    'id' => $id,
+    'name' => $name,
+    'password' => $password,
+    'role' => $role,
+    'balance' => $balance
+  ];
 }
 
 function cancelOrder($link, $orderId, $customerId) {
@@ -93,16 +121,18 @@ function cancelOrder($link, $orderId, $customerId) {
     rollbackTransaction($link);
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
     rollbackTransaction($link);
-    return null;
-  }
-  if (!executeStatement($stmt)) {
+  } else if (!executeStatement($stmt)) {
     rollbackTransaction($link);
-    return null;
+  } else {
+    $result = mysqli_stmt_affected_rows($stmt) !== 0;
   }
-  return mysqli_stmt_affected_rows($stmt) !== 0;
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function addToChangeLog($link, $customerId, $orderId) {
@@ -113,9 +143,12 @@ function addToChangeLog($link, $customerId, $orderId) {
   }
   if (!mysqli_stmt_bind_param($stmt, 'iii', $customerId, $orderId, time())) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
+  } else {
+    $result = executeStatement($stmt);
   }
-  return executeStatement($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function addOrder($link, $customerId, $description, $price, $time) {
@@ -124,19 +157,21 @@ function addOrder($link, $customerId, $description, $price, $time) {
   if (is_null($stmt)) {
     return 0;
   }
+  $result = 0;
+
   if (!mysqli_stmt_bind_param($stmt, 'ssii', $description, $price, $time, $customerId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return 0;
   }
-  if (!executeStatement($stmt)) {
-    return 0;
-  }
-  $orderId = intval(mysqli_insert_id($link));
+  else if (executeStatement($stmt)) {
+    $orderId = intval(mysqli_insert_id($link));
 
-  if ($orderId == 0) {
-    logError('cannot get last inserted id');
+    if ($orderId == 0) {
+      logError('cannot get last inserted id');
+    }
+    $result = $orderId;
   }
-  return $orderId;
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function deleteFromWaitingOrders($link, $orderId, $customerId) {
@@ -145,28 +180,51 @@ function deleteFromWaitingOrders($link, $orderId, $customerId) {
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } else if (executeStatement($stmt)) {
+    $result = mysqli_stmt_affected_rows($stmt) !== 0;
   }
-  if (!executeStatement($stmt)) {
-    return null;
-  }
-  return mysqli_stmt_affected_rows($stmt) !== 0;
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
-function getWaitingOrders($link, $orderId, $customerId) {
-  $stmt = prepareQuery($link, 'SELECT * FROM waiting_orders WHERE order_id=? AND customer_id=?');
+function findWaitingOrder($link, $orderId, $customerId) {
+  $stmt = prepareQuery($link, 'SELECT order_id, customer_id, description, price, time ' .
+    'FROM waiting_orders WHERE order_id=? AND customer_id=?');
 
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'ii', $orderId, $customerId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+  } else if (executeStatement($stmt)) {
+    $result = fetchWaitingOrder($stmt);
+  }
+  mysqli_stmt_close($stmt);
+  return $result;
+}
+
+function fetchWaitingOrder($stmt) {
+  if (!mysqli_stmt_bind_result($stmt, $orderId, $customerId, $description, $price, $time)) {
+    logMysqlStmtError(CANNOT_BIND_RESULT, $stmt);
     return null;
   }
-  $orderInfos = executeAndGetResultAssoc($stmt, null);
-  return $orderInfos ? getIfExists($orderInfos, 0) : null;
+
+  if (!mysqli_stmt_fetch($stmt)) {
+    return null;
+  }
+  return [
+    'order_id' => $orderId,
+    'customer_id' => $customerId,
+    'description' => $description,
+    'price' => $price,
+    'time' => $time
+  ];
 }
 
 function updateUserBalance($link, $userId, $profit) {
@@ -177,9 +235,12 @@ function updateUserBalance($link, $userId, $profit) {
   }
   if (!mysqli_stmt_bind_param($stmt, 'di', $profit, $userId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
+  } else {
+    $result = executeStatementAndCheckRowsAffected($stmt);
   }
-  return executeStatementAndCheckRowsAffected($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function insertIntoDoneTables($doneForCustomerLink, $doneForExecutorLink, $orderInfo,
@@ -206,9 +267,14 @@ function insertIntoDoneTables($doneForCustomerLink, $doneForExecutorLink, $order
     $price, $time, $executorId, $doneTime)
   ) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
   }
-  if (!executeStatement($stmt)) {
+  else {
+    $result = executeStatement($stmt);
+  }
+  mysqli_stmt_close($stmt);
+
+  if (!$result) {
     return false;
   }
   $stmt = prepareQuery($doneForExecutorLink,
@@ -222,9 +288,12 @@ function insertIntoDoneTables($doneForCustomerLink, $doneForExecutorLink, $order
     $profit, $time, $executorId, $doneTime)
   ) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
+  } else {
+    $result = executeStatement($stmt);
   }
-  return executeStatement($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function cleanDoneOrCanceledLog($link) {
@@ -236,20 +305,41 @@ function getDoneOrCanceledLog($link, $lwTime) {
 }
 
 function doGetDoneOrCanceledLog($link, $lwTime, $tableName) {
-  $stmt = prepareQuery($link, 'SELECT order_id, customer_id, time '.'FROM ' . $tableName . ' WHERE TIME >= ?');
+  $stmt = prepareQuery($link, 'SELECT order_id, customer_id, time ' . 'FROM ' . $tableName . ' WHERE TIME >= ?');
 
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'i', $lwTime)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } else if (executeStatement($stmt)) {
+    $result = fetchDoneOrCanceledLog($stmt);
   }
-  return executeAndGetResultAssoc($stmt, null);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
-function getOrders($link, $tableName, $timeColumnName, $count, $condition) {
-  $query = 'SELECT * FROM' . ' ' . $tableName;
+function fetchDoneOrCanceledLog($stmt) {
+  if (!mysqli_stmt_bind_result($stmt, $orderId, $customerId, $time)) {
+    logMysqlStmtError(CANNOT_BIND_RESULT, $stmt);
+    return null;
+  }
+  $result = [];
+
+  while (mysqli_stmt_fetch($stmt)) {
+    array_push($result, [
+      'order_id' => $orderId,
+      'customer_id' => $customerId,
+      'time' => $time
+    ]);
+  }
+  return $result;
+}
+
+function getOrders($link, $tableName, $timeColumnName, $columns, $count, $condition) {
+  $query = 'SELECT ' . implode($columns, ',') . ' FROM' . ' ' . $tableName;
 
   if ($condition != '') {
     $query .= ' WHERE ' . $condition;
@@ -261,11 +351,35 @@ function getOrders($link, $tableName, $timeColumnName, $count, $condition) {
   if (is_null($stmt)) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'i', $count)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } else if (executeStatement($stmt)) {
+    $order = [];
+    $params = [$stmt];
+    $i = 1;
+
+    foreach ($columns as $column) {
+      $params[$i++] = &$order[$column];
+    }
+    if (!call_user_func_array('mysqli_stmt_bind_result', $params)) {
+      logMysqlStmtError(CANNOT_BIND_RESULT, $stmt);
+    } else {
+      $result = [];
+
+      while (mysqli_stmt_fetch($stmt)) {
+        $orderCopy = [];
+
+        foreach ($order as $key => $value) {
+          $orderCopy[$key] = $value;
+        }
+        array_push($result, $orderCopy);
+      }
+    }
   }
-  return executeAndGetResultAssoc($stmt, null);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function getFeedCache($link) {
@@ -296,7 +410,7 @@ function putFeedCache($link, $orders) {
     }
     $valuesPart .= $s;
   }
-  return performQuery($link, "INSERT INTO feed_cache ".
+  return performQuery($link, "INSERT INTO feed_cache " .
     "(order_id, customer_id, description, price, time) VALUES $valuesPart");
 }
 
@@ -321,13 +435,15 @@ function putDoneOrCanceledLogCache($link, $orders) {
     }
     $valuesPart .= $s;
   }
-  return performQuery($link, "INSERT INTO done_or_canceled_log_cache ".
+  return performQuery($link, "INSERT INTO done_or_canceled_log_cache " .
     "(order_id, customer_id, time) VALUES $valuesPart");
 }
 
 function getTimestamp($link) {
   $result = performQuery($link, 'SELECT UNIX_TIMESTAMP()');
-  return $result ? fetchOnlyValue($result) : null;
+  $value = $result ? fetchOnlyValue($result) : null;
+  mysqli_free_result($result);
+  return $value;
 }
 
 function getCacheExpirationTime($link, $cacheId) {
@@ -336,13 +452,15 @@ function getCacheExpirationTime($link, $cacheId) {
   if (!$stmt) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'i', $cacheId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } else if (executeStatement($stmt)) {
+    $result = intval(fetchOnlyValueForStmt($stmt));
   }
-  return executeAndProcessResult($stmt, null, function ($result) {
-    return fetchOnlyValue($result);
-  });
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function setCacheExpirationTime($link, $cacheId, $time) {
@@ -351,11 +469,15 @@ function setCacheExpirationTime($link, $cacheId, $time) {
   if (!$stmt) {
     return false;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 'ii', $cacheId, $time)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
+  } else {
+    $result = executeStatement($stmt);
   }
-  return executeStatement($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function readSession($link, $sessionId) {
@@ -364,19 +486,22 @@ function readSession($link, $sessionId) {
   if (!$stmt) {
     return null;
   }
+  $result = null;
+
   if (!mysqli_stmt_bind_param($stmt, 's', $sessionId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return null;
   }
-  $sessionData = executeAndProcessResult($stmt, null, function ($result) {
-    $value = fetchOnlyValue($result);
-    return is_null($value) ? false : $value;
-  });
+  else if (executeStatement($stmt)) {
+    $result = fetchOnlyValueForStmt($stmt);
+  }
+  mysqli_stmt_close($stmt);
+  $sessionData = is_null($result) ? null : $result;
 
   if (is_null($sessionData)) {
     return null;
   }
   $time = time();
+  $result = null;
 
   if ($sessionData !== false) {
     $stmt = prepareQuery($link, 'UPDATE sessions SET touch_time = ? WHERE id = ?');
@@ -386,12 +511,9 @@ function readSession($link, $sessionId) {
     }
     if (!mysqli_stmt_bind_param($stmt, 'is', $time, $sessionId)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return null;
+    } else if (executeStatement($stmt)) {
+      $result = html_entity_decode($sessionData);
     }
-    if (!executeStatement($stmt)) {
-      return null;
-    }
-    return html_entity_decode($sessionData);
   } else {
     $stmt = prepareQuery($link, 'INSERT INTO sessions (id, touch_time, data) VALUES (?, ?, "")');
 
@@ -400,10 +522,12 @@ function readSession($link, $sessionId) {
     }
     if (!mysqli_stmt_bind_param($stmt, 'si', $sessionId, $time)) {
       logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-      return null;
+    } else if (executeStatement($stmt)) {
+      $result = '';
     }
-    return executeStatement($stmt) ? '' : null;
   }
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function writeSession($link, $sessionId, $data) {
@@ -417,9 +541,12 @@ function writeSession($link, $sessionId, $data) {
 
   if (!mysqli_stmt_bind_param($stmt, 'iss', $time, $s, $sessionId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
+  } else {
+    $result = executeStatement($stmt);
   }
-  return executeStatement($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function destroySession($link, $sessionId) {
@@ -430,9 +557,12 @@ function destroySession($link, $sessionId) {
   }
   if (!mysqli_stmt_bind_param($stmt, 's', $sessionId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
+  } else {
+    $result = executeStatement($stmt);
   }
-  return executeStatement($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function deleteExpiredSessions($link, $maxLifeTime) {
@@ -445,9 +575,12 @@ function deleteExpiredSessions($link, $maxLifeTime) {
 
   if (!mysqli_stmt_bind_param($stmt, 'ii', $maxLifeTime, $time)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
-    return false;
+    $result = false;
+  } else {
+    $result = executeStatement($stmt);
   }
-  return executeStatement($stmt);
+  mysqli_stmt_close($stmt);
+  return $result;
 }
 
 function connect($host, $port, $database, $login, $password) {
@@ -498,7 +631,7 @@ function prepareQuery($link, $query) {
 }
 
 function executeStatement($stmt) {
-  if (!mysqli_stmt_execute($stmt)) {
+  if (!(mysqli_stmt_execute($stmt))) {
     logMysqlStmtError('cannot execute sql query', $stmt);
     return false;
   }
@@ -521,10 +654,12 @@ function fetchOnlyValue($result) {
   return is_array($row) ? getIfExists($row, 0) : null;
 }
 
-function executeAndGetResultAssoc($stmt, $defaultValue) {
-  return executeAndProcessResult($stmt, $defaultValue, function ($result) {
-    return fetchAllAssoc($result);
-  });
+function fetchOnlyValueForStmt($stmt) {
+  if (!mysqli_stmt_bind_result($stmt, $value)) {
+    logMysqlStmtError(CANNOT_BIND_RESULT, $stmt);
+    return null;
+  }
+  return mysqli_stmt_fetch($stmt) ? $value : false;
 }
 
 function fetchAllAssoc($result) {
@@ -534,23 +669,6 @@ function fetchAllAssoc($result) {
     array_push($elements, $e);
   }
   return $elements;
-}
-
-function executeAndProcessResult($stmt, $errorValue, $func) {
-  if (!executeStatement($stmt)) {
-    return $errorValue;
-  }
-  /** @noinspection PhpVoidFunctionResultUsedInspection */
-  $result = mysqli_stmt_get_result($stmt);
-
-  if (!$result) {
-    logMysqlStmtError('cannot get result of sql query: ', $stmt);
-    return $errorValue;
-  }
-  $value = $func($result);
-  /** @noinspection PhpParamsInspection */
-  mysqli_free_result($result);
-  return $value;
 }
 
 function logMysqlStmtError($prefix, $stmt) {
