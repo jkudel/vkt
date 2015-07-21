@@ -1,4 +1,4 @@
-const ORDER_LIST_PART_SIZE = 4;
+const ORDER_LIST_PART_SIZE = 10;
 const VIEW_MODE_PARAM = 'view-mode';
 
 const ERROR_CODE_NO_OBJECT = 3;
