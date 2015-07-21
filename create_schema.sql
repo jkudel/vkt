@@ -9,24 +9,25 @@ CREATE TABLE users (
   CHARACTER SET = utf8
   ENGINE = InnoDB;
 
-# Таблица, используемая для генерации нового user_id. Она нужна, т.к. users может быть разбита.
+# Таблица, используемая для генерации новых user_id и order_id. Для order_id она разбивается по customer_id.
+# Таким образом, order_id будет уникальным только в пределах одного customer-а.
 CREATE TABLE sequences (
-  user_id INT UNSIGNED NOT NULL DEFAULT 0
+  user_id INT UNSIGNED NOT NULL DEFAULT 0,
+  order_id INT UNSIGNED NOT NULL DEFAULT 0
 )
   CHARACTER SET = utf8,
   ENGINE = InnoDB;
 
 INSERT INTO sequences VALUES ();
 
-# Таблица ожидающих заказов. Разбивается по customer_id. order_id в этой таблице является уникальным, но вообще
-# заказ однозначно идентифицируется парой (customer_id, order_id)
+# Таблица ожидающих заказов. Разбивается по customer_id.
 CREATE TABLE waiting_orders (
-  order_id    INT UNSIGNED            NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  order_id    INT UNSIGNED            NOT NULL,
   customer_id INT UNSIGNED            NOT NULL,
   description VARCHAR(300)            NOT NULL,
   price       DECIMAL(10, 2) UNSIGNED NOT NULL,
   time        BIGINT UNSIGNED         NOT NULL,
-  INDEX (order_id, customer_id),
+  PRIMARY KEY (order_id, customer_id),
   INDEX (customer_id, time),
   INDEX (customer_id),
   INDEX (time)

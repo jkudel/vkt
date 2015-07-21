@@ -1,22 +1,22 @@
 <?php
 
-function getShardsByTableName($tableName) {
-  $shards = doGetShardsByTableName($tableName);
+function getShardsByKey($key) {
+  $shards = doGetShardsByKey($key);
 
   if (!$shards) {
-    logError('cannot get shards for "'.$tableName.'""');
+    logError('cannot get shards for "'.$key.'""');
   }
   return $shards;
 }
 
-function doGetShardsByTableName($tableName) {
+function doGetShardsByKey($key) {
   $shards = getIfExists(CONFIG, 'shards');
 
   if (!$shards) {
     return [];
   }
   $mapping = getIfExists(CONFIG, 'shards_mapping');
-  $ids = $mapping ? getIfExists($mapping, $tableName) : null;
+  $ids = $mapping ? getIfExists($mapping, $key) : null;
 
   if (!$ids) {
     return [];
@@ -42,11 +42,11 @@ function getDbForUsers($userId) {
 }
 
 function getAllDbsForUsers() {
-  return getShardsByTableName('users');
+  return getShardsByKey('users');
 }
 
 function getAllDbsForSessions() {
-  return getShardsByTableName('sessions');
+  return getShardsByKey('sessions');
 }
 
 function getDbForSessions($sessionId) {
@@ -54,9 +54,13 @@ function getDbForSessions($sessionId) {
   return chooseShard(getAllDbsForSessions(), $key);
 }
 
-function getDbForSequences() {
-  $shards = getShardsByTableName('sequences');
+function getDbForUserIdGeneration() {
+  $shards = getShardsByKey('user_id_generation_sequence');
   return $shards ? getIfExists($shards, 0) : null;
+}
+
+function getDbForOrderIdGeneration($customerId) {
+  return chooseShard(getShardsByKey('order_id_generation_sequence'), $customerId);
 }
 
 function getDbForWaitingOrders($customerId) {
@@ -64,15 +68,15 @@ function getDbForWaitingOrders($customerId) {
 }
 
 function getAllDbsForWaitingOrders() {
-  return getShardsByTableName('waiting_orders');
+  return getShardsByKey('waiting_orders');
 }
 
 function getDbForDoneOrdersForCustomer($customerId) {
-  return chooseShard(getShardsByTableName('done_orders_for_customer'), $customerId);
+  return chooseShard(getShardsByKey('done_orders_for_customer'), $customerId);
 }
 
 function getDbForDoneOrdersForExecutor($executorId) {
-  return chooseShard(getShardsByTableName('done_orders_for_executor'), $executorId);
+  return chooseShard(getShardsByKey('done_orders_for_executor'), $executorId);
 }
 
 function getDbForDoneOrCanceledLog($customerId) {
@@ -80,9 +84,9 @@ function getDbForDoneOrCanceledLog($customerId) {
 }
 
 function getAllDbsForDoneOrCanceledLog() {
-  return getShardsByTableName('done_or_canceled_log');
+  return getShardsByKey('done_or_canceled_log');
 }
 
 function getDbForCache($userId) {
-  return chooseShard(getShardsByTableName('cache'), $userId);
+  return chooseShard(getShardsByKey('cache'), $userId);
 }

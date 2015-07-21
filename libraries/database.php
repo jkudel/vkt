@@ -37,6 +37,22 @@ function getNextUserId($link) {
   return $value;
 }
 
+function getNextOrderId($link) {
+  if (!performQuery($link, 'UPDATE sequences SET order_id = order_id + 1')) {
+    rollbackTransaction($link);
+    return 0;
+  }
+  $result = performQuery($link, 'SELECT order_id FROM sequences');
+
+  if (!$result) {
+    rollbackTransaction($link);
+    return 0;
+  }
+  $value = intval(fetchOnlyValue($result));
+  mysqli_free_result($result);
+  return $value;
+}
+
 function performQuery($link, $query) {
   $result = mysqli_query($link, $query);
 
@@ -151,24 +167,18 @@ function addToChangeLog($link, $customerId, $orderId) {
   return $result;
 }
 
-function addOrder($link, $customerId, $description, $price, $time) {
-  $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (description, price, time, customer_id) VALUES (?, ?, ?, ?);');
+function addOrder($link, $customerId, $orderId, $description, $price, $time) {
+  $stmt = prepareQuery($link, 'INSERT INTO waiting_orders (description, price, time, order_id, customer_id) VALUES (?, ?, ?, ?, ?);');
 
   if (is_null($stmt)) {
-    return 0;
+    return false;
   }
-  $result = 0;
-
-  if (!mysqli_stmt_bind_param($stmt, 'ssii', $description, $price, $time, $customerId)) {
+  if (!mysqli_stmt_bind_param($stmt, 'ssiii', $description, $price, $time, $orderId, $customerId)) {
     logMysqlStmtError(CANNOT_BIND_SQL_PARAMS, $stmt);
+    $result = false;
   }
-  else if (executeStatement($stmt)) {
-    $orderId = intval(mysqli_insert_id($link));
-
-    if ($orderId == 0) {
-      logError('cannot get last inserted id');
-    }
-    $result = $orderId;
+  else {
+    $result = executeStatement($stmt);
   }
   mysqli_stmt_close($stmt);
   return $result;

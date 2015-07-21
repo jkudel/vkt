@@ -15,7 +15,8 @@ const CONFIG = [
     'done_or_canceled_log' => [1, 2],
     'done_orders_for_customer' => [1, 2],
     'done_orders_for_executor' => [1, 2],
-    'sequences' => [0],
+    'user_id_generation_sequence' => [0],
+    'order_id_generation_sequence' => [1, 2],
     'sessions' => [1, 2],
     'cache' => [0]
   ],

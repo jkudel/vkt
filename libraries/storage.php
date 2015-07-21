@@ -7,7 +7,7 @@ const CANNOT_BIND_SQL_PARAMS = 'cannot bind params to sql query';
 $hostAndDb2link = [];
 
 function addUser($userName, $passwordHash, $role) {
-  $dbInfo = getDbForSequences();
+  $dbInfo = getDbForUserIdGeneration();
   $link = $dbInfo ? connect($dbInfo) : null;
 
   if (!$link || !\database\beginTransaction($link)) {
@@ -116,6 +116,12 @@ function addToChangeLog($customerId, $orderId) {
   return \database\addToChangeLog($link, $customerId, $orderId);
 }
 
+function getNextOrderId($customerId) {
+  $dbInfo = getDbForOrderIdGeneration($customerId);
+  $link = $dbInfo ? connect($dbInfo) : null;
+  return $link ? \database\getNextOrderId($link) : null;
+}
+
 function addOrder($customerId, $description, $price) {
   $userInfo = getUserInfoById($customerId);
 
@@ -128,10 +134,15 @@ function addOrder($customerId, $description, $price) {
   if (!$link || !\database\beginTransaction($link)) {
     return null;
   }
-  $time = time();
-  $orderId = \database\addOrder($link, $customerId, $description, $price, $time);
+  $orderId = getNextOrderId($customerId);
 
   if (!$orderId) {
+    \database\rollbackTransaction($link);
+    return null;
+  }
+  $time = time();
+
+  if (!\database\addOrder($link, $customerId, $orderId, $description, $price, $time)) {
     \database\rollbackTransaction($link);
     return null;
   }
