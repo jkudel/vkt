@@ -135,7 +135,7 @@ function doGetPresentableTime(date) {
   var now = moment.utc();
 
   if (date.isAfter(now)) {
-    return "just now";
+    return msg('just.now');
   }
   if (now.diff(date, 'days') > 13) {
     if (now.get('year') === date.get('year')) {

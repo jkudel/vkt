@@ -59,5 +59,6 @@ const MESSAGES = [
   'already.canceled.error' => 'Заказ отменен',
   'order.canceled.error' => 'Заказ был отменен',
   'refresh' => 'Обновить',
-  'author' => 'Евгений Куделевский'
+  'author' => 'Евгений Куделевский',
+  'just.now' => 'Только что'
 ];
