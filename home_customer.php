@@ -13,7 +13,7 @@
         </div>
         <div class="field">
           <label for="new-order-price"><?= msg('price') ?> (<?= msg('currency') ?>):</label>
-          <input id="new-order-price" class="fill" name="price" autocomplete="off"/>
+          <input id="new-order-price" class="fill" type="text" name="price" autocomplete="off"/>
 
           <div class="error-placeholder"></div>
         </div>
