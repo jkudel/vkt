@@ -1,4 +1,4 @@
-const ORDER_LIST_PART_SIZE = 10;
+const ORDER_LIST_PART_SIZE = 4;
 const VIEW_MODE_PARAM = 'view-mode';
 
 const ERROR_CODE_NO_OBJECT = 3;
@@ -8,7 +8,6 @@ var loadOrders = null; // function
 
 var feedOrdersIdSet = {};
 var newestOrder = null;
-var oldestOrder = null;
 var feedOrders = [];
 var viewMode = null;
 var feedActionsQueue = [];
@@ -16,6 +15,7 @@ var executingFeedActionInfo = null;
 
 function buildParamsOlderThanOrders(timeFieldName) {
   var result = {count: ORDER_LIST_PART_SIZE};
+  var oldestOrder = feedOrders.length > 0 ? feedOrders[feedOrders.length - 1] : null;
 
   if (!oldestOrder) {
     return result;
@@ -36,7 +36,7 @@ function buildParamsNewerThanOrders(timeFieldName) {
   return result;
 }
 
-function addOrdersToFeedSet(response) {
+function addOrdersToFeedSet(response, filter) {
   var list = response['list'];
 
   if (!list) {
@@ -48,7 +48,7 @@ function addOrdersToFeedSet(response) {
     var order = list[i];
     var orderId = order['order_id'];
 
-    if (!feedOrdersIdSet[orderId]) {
+    if (!feedOrdersIdSet[orderId] && (!filter || filter(orderId))) {
       feedOrdersIdSet[orderId] = true;
       filteredList.push(order);
     }
@@ -67,10 +67,6 @@ function prependLoadedOrdersToFeed(response) {
 function prependOrdersToFeed(list, hasMore) {
   feedOrders = list.concat(feedOrders);
   newestOrder = feedOrders[0];
-
-  if (!oldestOrder) {
-    oldestOrder = feedOrders[feedOrders.length - 1];
-  }
   var ordersBlock = $('#orders');
   ordersBlock.prepend(buildHtmlForOrdersList(list));
 
@@ -94,12 +90,11 @@ function prependOrdersToFeed(list, hasMore) {
   }
 }
 
-function appendLoadedOrdersToFeed(response) {
-  var filteredList = addOrdersToFeedSet(response);
+function appendLoadedOrdersToFeed(response, filter) {
+  var filteredList = addOrdersToFeedSet(response, filter);
 
   if (filteredList) {
     feedOrders = feedOrders.concat(filteredList);
-    oldestOrder = feedOrders[feedOrders.length - 1];
 
     if (!newestOrder) {
       newestOrder = feedOrders[0];
@@ -324,7 +319,6 @@ function scheduleLoadingOrders(reload, count, errorPlaceholder, finished) {
       feedOrders = [];
       feedOrdersIdSet = {};
       newestOrder = null;
-      oldestOrder = null;
     }
     loadOrders(reload, count, errorCallback, canceledFunc, function () {
       if (canceledFunc()) {

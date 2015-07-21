@@ -1,3 +1,5 @@
+var executionLog = [];
+
 function loadNewWaitingOrders(showNewLink) {
   var progress = showNewLink.next('.progress');
 
@@ -56,6 +58,11 @@ function executeOrder(orderId, orderBlock, link) {
       progress.remove();
       $('#balance').text(response['balance'] + ' ' + msg('currency'));
       removeOrderBlock(orderBlock, orderId);
+      executionLog.push(orderId);
+
+      if (executionLog.length > 50) {
+        executionLog = executionLog.shift();
+      }
       loadUnderProgress(false, 1);
       runAfter();
     }, function (errorMessage, errorCode) {
@@ -131,6 +138,7 @@ function scheduleCheckingUpdatesForExecutor() {
   setTimeout(function () {
     scheduleFeedAction(function (runAfter, canceledFunc) {
       if (canceledFunc()) {
+        scheduleCheckingUpdatesForExecutor();
         return;
       }
       if (viewMode != 'available') {
@@ -155,9 +163,7 @@ function scheduleCheckingUpdatesForExecutor() {
         scheduleCheckingUpdatesForExecutor();
         runAfter();
       });
-    }, function() {
-      scheduleCheckingUpdatesForExecutor();
-    });
+    }, scheduleCheckingUpdatesForExecutor);
   }, 4000);
 }
 
@@ -181,7 +187,9 @@ loadOrders = function (reload, count, errorCallback, canceledFunc, callback) {
       return;
     }
     callback();
-    appendLoadedOrdersToFeed(response);
+    appendLoadedOrdersToFeed(response, function(orderId) {
+      return executionLog.indexOf(orderId) < 0;
+    });
   };
   var done = viewMode == 'done';
   var params = buildParamsOlderThanOrders(done ? 'done_time' : 'time');
