@@ -49,10 +49,6 @@ a.toggle {
   color: inherit;
 }
 
-.toggle:active {
-  color: inherit;
-}
-
 .toggle:hover {
   background: #ebebeb;
 }
