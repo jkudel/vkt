@@ -6,7 +6,7 @@ function loadNewWaitingOrders(showNewLink) {
   }
   showNewLink.after('<div class="progress"></div>');
   progress = initProgress(showNewLink.next());
-  var params = buildParamsNewerThanFirstOrder('time');
+  var params = buildParamsNewerThanOrders('time');
 
   scheduleFeedAction(function (runAfter, canceledFunc) {
     if (canceledFunc()) {
@@ -65,7 +65,7 @@ function executeOrder(orderId, orderBlock, link) {
       progress.remove();
 
       if (errorCode == ERROR_CODE_NO_OBJECT) {
-        errorMessage = msg('order.canceled.error');
+        errorMessage = msg('already.executed.or.canceled.error');
       }
       errorPlaceholder.text(errorMessage);
       errorPlaceholder.show();
@@ -138,7 +138,7 @@ function scheduleCheckingUpdatesForExecutor() {
         runAfter();
         return;
       }
-      var params = buildParamsNewerThanFirstOrder('time');
+      var params = buildParamsNewerThanOrders('time');
 
       ajaxCheckForUpdates(params, function (response) {
         if (canceledFunc()) {
@@ -158,7 +158,7 @@ function scheduleCheckingUpdatesForExecutor() {
     }, function() {
       scheduleCheckingUpdatesForExecutor();
     });
-  }, 5000);
+  }, 1000);
 }
 
 buildOrderBlockInFeed = function (data) {
@@ -184,7 +184,7 @@ loadOrders = function (reload, count, errorCallback, canceledFunc, callback) {
     appendLoadedOrdersToFeed(response);
   };
   var done = viewMode == 'done';
-  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
+  var params = buildParamsOlderThanOrders(done ? 'done_time' : 'time');
 
   if (count) {
     params['count'] = count;

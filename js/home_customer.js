@@ -27,7 +27,7 @@ function cancelOrder(orderId, orderBlock, link) {
       progress.remove();
 
       if (errorCode == ERROR_CODE_NO_OBJECT) {
-        errorMessage = msg('already.canceled.error');
+        errorMessage = msg('already.executed.or.canceled.error');
       }
       errorPlaceholder.show();
       errorPlaceholder.text(errorMessage);
@@ -90,7 +90,7 @@ function scheduleCheckingUpdatesForCustomer() {
         runAfter();
         return;
       }
-      var params = buildParamsNewerThanFirstOrder('done_time');
+      var params = buildParamsNewerThanOrders('done_time');
       params['done'] = 1;
 
       ajaxGetMyOrders(params, function (response) {
@@ -164,7 +164,7 @@ buildOrderBlockInFeed = function (data) {
 
 loadOrders = function (reload, count, errorCallback, canceledFunc, callback) {
   var done = viewMode == 'done' ? 1 : 0;
-  var params = buildParamsOlderThanLastOrder(done ? 'done_time' : 'time');
+  var params = buildParamsOlderThanOrders(done ? 'done_time' : 'time');
   params['done'] = done;
 
   if (count) {
