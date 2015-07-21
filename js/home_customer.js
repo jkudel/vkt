@@ -19,7 +19,7 @@ function cancelOrder(orderId, orderBlock, link) {
       progress.remove();
       removeOrderBlock(orderBlock, orderId);
 
-      if (feedOrders.length == ORDER_LIST_PART_SIZE - 1) {
+      if (feedOrders.length >= ORDER_LIST_PART_SIZE - 1) {
         loadUnderProgress(false, 1);
       }
       runAfter();
