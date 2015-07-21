@@ -83,6 +83,7 @@ function scheduleCheckingUpdatesForCustomer() {
   setTimeout(function () {
     scheduleFeedAction(function (runAfter, canceledFunc) {
       if (canceledFunc()) {
+        scheduleCheckingUpdatesForCustomer();
         return;
       }
       if (viewMode != 'done') {
@@ -108,9 +109,7 @@ function scheduleCheckingUpdatesForCustomer() {
         scheduleCheckingUpdatesForCustomer();
         runAfter();
       });
-    }, function() {
-      scheduleCheckingUpdatesForCustomer();
-    });
+    }, scheduleCheckingUpdatesForCustomer);
   }, 4000);
 }
 
