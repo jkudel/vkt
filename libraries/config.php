@@ -5,6 +5,9 @@ const CONFIG = [
     0 => ['host' => '', 'database' => 'ekudel', 'login' => 'ekudel', 'password'=>'my_password'],
     1 => ['host' => '', 'database' => 'ekudel_shard1', 'login' => 'ekudel_shard1', 'password'=>'my_password'],
     2 => ['host' => '', 'database' => 'ekudel_shard2', 'login' => 'ekudel_shard2', 'password'=>'my_password']
+//    0 => ['host' => '', 'database' => 'main', 'login' => 'root', 'password' => ''],
+//    1 => ['host' => '', 'database' => 'shard1', 'login' => 'root', 'password' => ''],
+//    2 => ['host' => '', 'database' => 'shard2', 'login' => 'root', 'password' => '']
   ],
   'shards_mapping' => [
     'users' => [1, 2],
