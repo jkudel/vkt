@@ -3,8 +3,9 @@ const VIEW_MODE_PARAM = 'view-mode';
 
 const ERROR_CODE_NO_OBJECT = 3;
 
-var buildOrderBlockInFeed = null;
-var loadOrders = null;
+var buildOrderBlockInFeed = null; // function
+var loadOrders = null; // function
+
 var feedOrdersIdSet = {};
 var feedOrders = [];
 var viewMode = null;
