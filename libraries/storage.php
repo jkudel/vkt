@@ -103,7 +103,7 @@ function cancelOrder($orderId, $customerId) {
     \database\rollbackTransaction($link);
     return null;
   }
-  return \database\commitTransaction($link) ? true : null;
+  return \database\commitTransaction($link) ? $result : null;
 }
 
 function addToChangeLog($customerId, $orderId) {
