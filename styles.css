@@ -128,6 +128,18 @@ input[type=radio] {
   -webkit-box-sizing: border-box;
 }
 
+input[type=text], input[type=password], textarea {
+  border: 1px solid #c8c8c8;
+}
+
+textarea {
+  overflow: auto;
+}
+
+html {
+  overflow-y: scroll;
+}
+
 body {
   margin: 0;
 }
@@ -218,7 +230,6 @@ header .current-user-info > div {
 
 .new-order-form textarea {
   resize: none;
-  border-color: #c8c8c8;
 }
 
 .new-order-form label {
