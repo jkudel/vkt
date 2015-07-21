@@ -215,7 +215,7 @@ $(document).ready(function () {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    cancelOrder(link.data('order-id'), link.parents('.order'), link);
+    cancelOrder(link.attr('data-order-id'), link.parents('.order'), link);
   });
   var newOrderForm = $('#new-order-form');
 

@@ -117,7 +117,7 @@ function removeOrdersFromFeed(orderIds) {
 
   $('#orders').children().each(function () {
     var executeButton = $(this).find('.execute-order-button');
-    var orderId = executeButton.data('order-id');
+    var orderId = executeButton.attr('data-order-id');
 
     if (ordersToRemove[orderId]) {
       removeOrderBlock($(this), orderId);
@@ -207,7 +207,7 @@ $(document).ready(function () {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    executeOrder(link.data('order-id'), link.parents('.order'), link);
+    executeOrder(link.attr('data-order-id'), link.parents('.order'), link);
   });
   $('#show-new-orders').click(function (e) {
     e.preventDefault();
