@@ -45,6 +45,10 @@
   border: 1px solid #c8c8c8;
 }
 
+a.toggle {
+  color: inherit;
+}
+
 .toggle:active {
   color: inherit;
 }
