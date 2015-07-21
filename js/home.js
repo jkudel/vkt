@@ -179,8 +179,8 @@ function buildBaseOrderBlock(data, showProfit, showExecutor, addToBottomPanel) {
   if (showProfit && data['profit']) {
     html += '<div class="price">' + msg('profit') + ': ' + data['profit'] + ' ' + msg('currency') + '</div>';
   }
-  html += '<div class="publish-time">' + msg('order.publish.time') + ': <span title="' +
-  timeTooltip + '">' + presentableTime + '</span></div>';
+  html += '<div class="publish-time">' + msg('order.publish.time') + ': <span class="time-placeholder" data-time="'
+  + time + '" title="' + timeTooltip + '">' + presentableTime + '</span></div>';
   var doneTime = data['done_time'];
 
   if (doneTime) {
@@ -195,8 +195,8 @@ function buildBaseOrderBlock(data, showProfit, showExecutor, addToBottomPanel) {
       var executor = data['executor'];
       html += '<div>' + msg('executor') + ': ' + executor + '</div>';
     }
-    html += '<div>' + msg('order.execution.time') + ': <span title="' +
-    timeTooltip + '">' + presentableTime + '</span></div>';
+    html += '<div>' + msg('order.execution.time') + ': <span class="time-placeholder" data-time="'
+    + doneTime + '" title="' + timeTooltip + '">' + presentableTime + '</span></div>';
   }
   html += '</div>';
 
@@ -373,6 +373,14 @@ function scheduleFeedAction(action, cancel) {
   }
 }
 
+function updateTimeStrings() {
+  $('.time-placeholder').each(function () {
+    var element = $(this);
+    var time = element.data('time');
+    element.text(getPresentableTime(time)[0]);
+  });
+}
+
 function init(defaultViewMode) {
   var viewModeButtons = $('#view-mode').find('a');
 
@@ -399,4 +407,5 @@ $(document).ready(function () {
     $(this).prop('visibility', 'hidden');
     loadUnderProgress(false, null);
   });
+  setInterval(updateTimeStrings, 20000);
 });
