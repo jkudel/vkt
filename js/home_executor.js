@@ -35,7 +35,7 @@ function loadNewWaitingOrders(showNewLink) {
   });
 }
 
-function executeOrder(orderId, price, orderBlock, link) {
+function executeOrder(orderId, orderBlock, link) {
   var errorPlaceholder = link.prevAll('.error-placeholder');
   var progress = link.prev('.progress');
 
@@ -168,7 +168,6 @@ buildOrderBlockInFeed = function (data) {
     var executeButton =
       '<input class="button execute-order-button" type="button" ' +
       'data-order-id="' + data['order_id'] + '" ' +
-      'data-order-price="' + data['price'] + '" ' +
       'value="' + msg('execute.order') + '"/>';
     addToBottomPanel = '<div class="action-panel"><span class="error-placeholder"></span>' +
     executeButton + '</div>';
@@ -208,7 +207,7 @@ $(document).ready(function () {
     e.preventDefault();
     clearErrors();
     var link = $(this);
-    executeOrder(link.data('order-id'), link.data('order-price'), link.parents('.order'), link);
+    executeOrder(link.data('order-id'), link.parents('.order'), link);
   });
   $('#show-new-orders').click(function (e) {
     e.preventDefault();
