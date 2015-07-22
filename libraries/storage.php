@@ -13,7 +13,6 @@ function addUser($userName, $passwordHash, $role) {
   if (!$link || !\database\beginTransaction($link)) {
     return 0;
   }
-  // todo: optimize - use another lock for user name and perform getNextUserId in separate transaction
   $userId = \database\getNextUserId($link);
 
   if (!$userId) {
@@ -151,21 +150,19 @@ function addOrder($customerId, $description, $price) {
     \database\rollbackTransaction($link);
     return null;
   }
-  if (!\database\commitTransaction($link)) {
-    return null;
-  }
   $time = time();
 
   if (!\database\addOrder($link, $customerId, $orderId, $description, $price, $time)) {
+    \database\rollbackTransaction($link);
     return null;
   }
-  return  [
+  return \database\commitTransaction($link) ? [
     'order_id' => $orderId,
     'customer_id' => $customerId,
     'description' => $description,
     'price' => $price,
     'time' => $time
-  ];
+  ] : null;
 }
 
 /**
