@@ -13,15 +13,19 @@ function addUser($userName, $passwordHash, $role) {
   if (!$link || !\database\beginTransaction($link)) {
     return 0;
   }
+  $userId = \database\getNextUserId($link);
+
+  if (!$userId) {
+    \database\rollbackTransaction($link);
+    return 0;
+  }
   $existingId = getUserIdByName($userName);
 
   if ($existingId) {
     \database\rollbackTransaction($link);
     return 0;
   }
-  $userId = \database\getNextUserId($link);
-
-  if (!$userId || !insertUser($userId, $userName, $passwordHash, $role)) {
+  if (!insertUser($userId, $userName, $passwordHash, $role)) {
     \database\rollbackTransaction($link);
     return 0;
   }
