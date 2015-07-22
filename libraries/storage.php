@@ -150,19 +150,21 @@ function addOrder($customerId, $description, $price) {
     \database\rollbackTransaction($link);
     return null;
   }
+  if (!\database\commitTransaction($link)) {
+    return null;
+  }
   $time = time();
 
   if (!\database\addOrder($link, $customerId, $orderId, $description, $price, $time)) {
-    \database\rollbackTransaction($link);
     return null;
   }
-  return \database\commitTransaction($link) ? [
+  return  [
     'order_id' => $orderId,
     'customer_id' => $customerId,
     'description' => $description,
     'price' => $price,
     'time' => $time
-  ] : null;
+  ];
 }
 
 /**
