@@ -187,16 +187,18 @@ buildOrderBlockInFeed = function (data) {
 };
 
 loadOrders = function (reload, count, errorCallback, canceledFunc, callback) {
+  var done = viewMode == 'done';
+
   var successCallback = function (response) {
     if (canceledFunc()) {
       return;
     }
     callback();
-    appendLoadedOrdersToFeed(response, function(orderId) {
+    var filter = done ? null : function (orderId) {
       return executionLog.indexOf(orderId) < 0;
-    });
+    };
+    appendLoadedOrdersToFeed(response, filter);
   };
-  var done = viewMode == 'done';
   var params = buildParamsOlderThanOrders(done ? 'done_time' : 'time');
 
   if (count) {
