@@ -5,6 +5,7 @@
  */
 const MESSAGES = [
   'internal.error' => 'Внутренняя ошибка сервера',
+  'ajax.error' => 'Не удалось выполнить запрос',
   'no.username.error' => 'Введите имя пользователя',
   'no.password.error' => 'Введите пароль',
   'auth.failed.error' => 'Неверное имя пользователя или пароль',

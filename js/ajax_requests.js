@@ -18,7 +18,7 @@ function handleSuccessResponse(response, successCallback, errorCallback) {
 }
 
 function handleErrorResponse(xhr, error, errorCallback) {
-  errorCallback(msg('internal.error'));
+  errorCallback(msg('ajax.error'));
   var responseTest = xhr['responseText'];
 
   if (responseTest) {
