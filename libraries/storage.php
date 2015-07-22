@@ -13,6 +13,7 @@ function addUser($userName, $passwordHash, $role) {
   if (!$link || !\database\beginTransaction($link)) {
     return 0;
   }
+  // todo: optimize - use another lock for user name and perform getNextUserId in separate transaction
   $userId = \database\getNextUserId($link);
 
   if (!$userId) {
