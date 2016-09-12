@@ -1,5 +1,4 @@
 <?php
-
 function getIfExists(array $array, $key) {
   return array_key_exists($key, $array) ? $array[$key] : null;
 }
